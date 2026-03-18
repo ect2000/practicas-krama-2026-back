@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
 
 import com.krama.backend.models.Usuario;
 import com.krama.backend.repositories.UsuarioRepository;
@@ -53,7 +54,7 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}")
-    public Usuario actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuarioActualizado) {
+    public ResponseEntity<Usuario> actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuarioActualizado) {
         return usuarioRepository.findById(id).map(usuario -> {
             // Actualizamos todos los campos del usuario
             usuario.setNombre(usuarioActualizado.getNombre());
@@ -62,8 +63,11 @@ public class UsuarioController {
             usuario.setTelefono(usuarioActualizado.getTelefono());
             usuario.setRol(usuarioActualizado.getRol());
             usuario.setCliente(usuarioActualizado.getCliente());
-            return usuarioRepository.save(usuario);
-        }).orElse(null);
+            
+            // Guardamos y devolvemos un 200 OK con los datos guardados
+            return ResponseEntity.ok(usuarioRepository.save(usuario));
+            
+        }).orElse(ResponseEntity.notFound().build()); // Si no lo encuentra, devuelve error 404
     }
 
     @DeleteMapping("/{id}")
