@@ -35,22 +35,27 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public Usuario crearUsuario(@RequestBody Usuario nuevoUsuario) {
-        // 1. Guardamos el usuario en la base de datos como siempre
+    public ResponseEntity<?> crearUsuario(@RequestBody Usuario nuevoUsuario) {
+        
+        // 1. Validamos si el email ya existe usando nuestro nuevo método del Repositorio
+        if (usuarioRepository.existsByEmail(nuevoUsuario.getEmail())) {
+            // Si existe, devolvemos un error HTTP 400 (Bad Request) con un mensaje claro
+            return ResponseEntity.badRequest().body("Error: Ya existe una cuenta con el correo " + nuevoUsuario.getEmail());
+        }
+
+        // 2. Si no existe, guardamos el usuario en la base de datos como siempre
         Usuario usuarioGuardado = usuarioRepository.save(nuevoUsuario);
         
-        // 2. Intentamos enviar el correo electrónico
+        // 3. Intentamos enviar el correo electrónico
         try {
-            // Le pasamos el email y el nombre que nos acaban de enviar
             emailService.enviarEmailBienvenida(usuarioGuardado.getEmail(), usuarioGuardado.getNombre());
             System.out.println("¡Correo de bienvenida enviado con éxito a " + usuarioGuardado.getEmail() + "!");
         } catch (Exception e) {
-            // Si el correo es inventado o hay un fallo de internet, evitamos que el programa explote
             System.err.println("Error al enviar el correo a " + usuarioGuardado.getEmail() + ": " + e.getMessage());
         }
 
-        // 3. Devolvemos el usuario guardado al frontend
-        return usuarioGuardado;
+        // 4. Devolvemos el usuario guardado al frontend con un código HTTP 200 (OK)
+        return ResponseEntity.ok(usuarioGuardado);
     }
 
     @PutMapping("/{id}")

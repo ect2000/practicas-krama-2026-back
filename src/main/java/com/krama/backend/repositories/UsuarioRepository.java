@@ -7,4 +7,6 @@ import com.krama.backend.models.Usuario;
 
 @Repository
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
+    // Spring Boot crea la consulta SQL automáticamente solo con leer este nombre
+    boolean existsByEmail(String email);
 }

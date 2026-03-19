@@ -1,5 +1,6 @@
 package com.krama.backend.models;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -22,6 +23,7 @@ public class Usuario {
 
     private String apellidos;
     
+    @Column(unique = true)
     private String email;
 
     private String telefono;
