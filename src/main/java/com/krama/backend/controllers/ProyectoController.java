@@ -16,10 +16,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.krama.backend.models.Cliente;
 import com.krama.backend.models.Imputacion;
 import com.krama.backend.models.Proyecto;
+import com.krama.backend.models.Usuario;
+import com.krama.backend.repositories.ClienteRepository;
 import com.krama.backend.repositories.ImputacionRepository;
 import com.krama.backend.repositories.ProyectoRepository;
+import com.krama.backend.repositories.UsuarioRepository;
 
 @RestController
 @RequestMapping("/api/proyectos")
@@ -29,18 +33,21 @@ public class ProyectoController {
     @Autowired
     private ProyectoRepository proyectoRepository;
 
-    // AÑADIDO: Inyectamos el repositorio de imputaciones para poder buscar las horas gastadas
     @Autowired
     private ImputacionRepository imputacionRepository;
+
+    // AÑADIDO: Inyectamos los repositorios para poder buscar antes de guardar
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private ClienteRepository clienteRepository;
 
     @GetMapping
     public List<Proyecto> obtenerTodosLosProyectos() {
         return proyectoRepository.findAll();
     }
 
-    // AÑADIDO: Nuevo endpoint para calcular la inteligencia del proyecto
-    // La URL será: GET /api/proyectos/1/horas-restantes
-    // La URL sigue siendo: GET /api/proyectos/{id}/horas-restantes
     @GetMapping("/{id}/horas-restantes")
     public ResponseEntity<?> calcularHorasRestantes(@PathVariable Long id) {
         
@@ -61,39 +68,53 @@ public class ProyectoController {
         double horasPresupuestadas = proyecto.getHorasPresupuestadas() != null ? proyecto.getHorasPresupuestadas() : 0.0;
         double horasRestantes = horasPresupuestadas - horasGastadas;
 
-        // --- NUEVA INTELIGENCIA AQUÍ ---
-
-        // Calculamos el porcentaje (con cuidado de no dividir entre cero si el proyecto no tiene horas presupuestadas)
         double porcentajeGastado = 0.0;
         if (horasPresupuestadas > 0) {
             porcentajeGastado = (horasGastadas / horasPresupuestadas) * 100;
         }
 
-        // Decidimos el estado del proyecto basados en los números
         String estado = "Todo en orden";
         if (horasRestantes < 0) {
             estado = "¡Peligro! Horas superadas";
         } else if (porcentajeGastado >= 80.0) {
-            // Si han gastado el 80% o más, lanzamos una advertencia
             estado = "Precaución: Presupuesto casi agotado"; 
         }
 
-        // Cambiamos Double por Object para poder meter números y textos mezclados
         Map<String, Object> resultado = new HashMap<>();
         resultado.put("horasPresupuestadas", horasPresupuestadas);
         resultado.put("horasGastadas", horasGastadas);
         resultado.put("horasRestantes", horasRestantes);
-        
-        // Añadimos nuestros nuevos datos inteligentes
-        resultado.put("porcentajeGastado", Math.round(porcentajeGastado * 100.0) / 100.0); // Redondeamos a 2 decimales
+        resultado.put("porcentajeGastado", Math.round(porcentajeGastado * 100.0) / 100.0);
         resultado.put("estado", estado);
 
         return ResponseEntity.ok(resultado);
     }
 
+    // --- CÓDIGO ACTUALIZADO A PRUEBA DE FALLOS ---
     @PostMapping
-    public Proyecto crearProyecto(@RequestBody Proyecto nuevoProyecto) {
-        return proyectoRepository.save(nuevoProyecto);
+    public ResponseEntity<?> crearProyecto(@RequestBody Proyecto nuevoProyecto) {
+        
+        // 1. Asegurarnos de que el Cliente existe en la base de datos
+        if (nuevoProyecto.getCliente() != null && nuevoProyecto.getCliente().getId() != null) {
+            Cliente clienteReal = clienteRepository.findById(nuevoProyecto.getCliente().getId()).orElse(null);
+            if (clienteReal == null) {
+                return ResponseEntity.badRequest().body("Error: El cliente proporcionado no existe.");
+            }
+            nuevoProyecto.setCliente(clienteReal); // Le asignamos el cliente real completo
+        }
+
+        // 2. Asegurarnos de que los Usuarios existen en la base de datos
+        if (nuevoProyecto.getUsuarios() != null && !nuevoProyecto.getUsuarios().isEmpty()) {
+            List<Long> idsUsuarios = nuevoProyecto.getUsuarios().stream()
+                                                  .map(Usuario::getId)
+                                                  .toList();
+            List<Usuario> usuariosReales = usuarioRepository.findAllById(idsUsuarios);
+            nuevoProyecto.setUsuarios(usuariosReales); // Le asignamos los usuarios reales completos
+        }
+
+        // 3. Ahora que todo es correcto, guardamos el proyecto
+        Proyecto proyectoGuardado = proyectoRepository.save(nuevoProyecto);
+        return ResponseEntity.ok(proyectoGuardado);
     }
 
     @PutMapping("/{id}")
@@ -103,7 +124,7 @@ public class ProyectoController {
             proyecto.setCosteTotal(proyectoActualizado.getCosteTotal());
             proyecto.setHorasPresupuestadas(proyectoActualizado.getHorasPresupuestadas());
             proyecto.setCliente(proyectoActualizado.getCliente());
-            proyecto.setUsuario(proyectoActualizado.getUsuario());
+            proyecto.setUsuarios(proyectoActualizado.getUsuarios());
             return proyectoRepository.save(proyecto);
         }).orElse(null);
     }

@@ -1,5 +1,9 @@
 package com.krama.backend.models;
 
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.JoinColumn;
 
 @Entity
@@ -30,11 +35,14 @@ public class Usuario {
 
     private String rol;
     
-    // ¡Borramos el Long idCliente y ponemos esto!
-    // @ManyToOne indica la relación (Muchos usuarios pueden pertenecer a un cliente)
-    // @JoinColumn le dice a MariaDB cómo se llamará la columna exacta en la tabla
     @ManyToOne
     @JoinColumn(name = "id_cliente")
     private Cliente cliente;
+
+    // --- CAMBIO IMPORTANTE AQUÍ ---
+    // mappedBy indica que la configuración principal de esta relación la tiene la clase Proyecto en su variable "usuarios"
+    @ManyToMany(mappedBy = "usuarios")
+    @JsonIgnoreProperties("usuarios")
+    private List<Proyecto> proyectos;
 
 }

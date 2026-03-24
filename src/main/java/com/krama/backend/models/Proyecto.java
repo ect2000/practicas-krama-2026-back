@@ -1,5 +1,9 @@
 package com.krama.backend.models;
 
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,7 +12,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
 
 @Entity
 @Table(name = "proyectos")
@@ -21,21 +27,26 @@ public class Proyecto {
 
     private String nombre;
 
-    // Usamos Double para los números con decimales (dinero/coste)
     @Column(name = "coste_total")
     private Double costeTotal;
 
-    // Usamos Double o Integer para las horas. Pongamos Double por si hay "medias horas" (ej: 2.5 horas)
     @Column(name = "horas_presupuestadas")
     private Double horasPresupuestadas;
 
-    // Claves foráneas temporales (las relacionaremos de verdad más adelante)
     @ManyToOne
     @JoinColumn(name = "id_cliente")
     private Cliente cliente;
 
-    @ManyToOne
-    @JoinColumn(name = "id_usuario")
-    private Usuario usuario;
+    // --- CAMBIO IMPORTANTE AQUÍ ---
+    // Cambiamos @ManyToOne por @ManyToMany
+    @ManyToMany
+    @JoinTable(
+        name = "proyectos_usuarios", // Nombre de la nueva tabla intermedia que creará MariaDB
+        joinColumns = @JoinColumn(name = "id_proyecto"),
+        inverseJoinColumns = @JoinColumn(name = "id_usuario")
+    )
+    // @JsonIgnoreProperties evita un bug muy común donde el JSON se vuelve infinito al leer la base de datos
+    @JsonIgnoreProperties("proyectos") 
+    private List<Usuario> usuarios;
 
 }
