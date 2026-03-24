@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.krama.backend.models.Imputacion;
+import com.krama.backend.models.Proyecto;
 import com.krama.backend.repositories.ImputacionRepository;
+import com.krama.backend.repositories.ProyectoRepository;
 
 @RestController
 @RequestMapping("/api/imputaciones")
@@ -25,18 +27,20 @@ public class ImputacionController {
     @Autowired
     private ImputacionRepository imputacionRepository;
 
+    // AÑADIDO: Inyectamos el repositorio de proyectos para consultar el presupuesto
+    @Autowired
+    private ProyectoRepository proyectoRepository;
+
     @GetMapping
     public List<Imputacion> obtenerTodasLasImputaciones() {
         return imputacionRepository.findAll();
     }
 
-    // Ruta para obtener solo las imputaciones de un usuario concreto (ej. /api/imputaciones/usuario/1)
     @GetMapping("/usuario/{usuarioId}")
     public List<Imputacion> obtenerImputacionesDeUsuario(@PathVariable Long usuarioId) {
         return imputacionRepository.findByUsuarioId(usuarioId);
     }
 
-    // Ruta para obtener las imputaciones de un proyecto (ej. /api/imputaciones/proyecto/2)
     @GetMapping("/proyecto/{proyectoId}")
     public List<Imputacion> obtenerImputacionesDeProyecto(@PathVariable Long proyectoId) {
         return imputacionRepository.findByProyectoId(proyectoId);
@@ -59,6 +63,30 @@ public class ImputacionController {
         if (nuevaImputacion.getProyecto() == null || nuevaImputacion.getUsuario() == null) {
             return ResponseEntity.badRequest().body("Error: Toda imputación debe tener asignado un proyecto y un usuario.");
         }
+
+        // --- NUEVA VALIDACIÓN: COMPROBAR PRESUPUESTO DEL PROYECTO ---
+        // Buscamos el proyecto en la base de datos usando el ID que nos llega
+        Proyecto proyecto = proyectoRepository.findById(nuevaImputacion.getProyecto().getId()).orElse(null);
+        
+        if (proyecto != null && proyecto.getHorasPresupuestadas() != null) {
+            // Buscamos todas las imputaciones que ya tiene este proyecto
+            List<Imputacion> imputacionesActuales = imputacionRepository.findByProyectoId(proyecto.getId());
+            
+            // Sumamos las horas ya gastadas
+            double horasGastadas = 0.0;
+            for (Imputacion imp : imputacionesActuales) {
+                if (imp.getHoras() != null) {
+                    horasGastadas += imp.getHoras();
+                }
+            }
+            
+            // Verificamos si las horas actuales + las nuevas superan lo presupuestado
+            if ((horasGastadas + nuevaImputacion.getHoras()) > proyecto.getHorasPresupuestadas()) {
+                double horasDisponibles = proyecto.getHorasPresupuestadas() - horasGastadas;
+                return ResponseEntity.badRequest().body("Error: No puedes imputar estas horas. El proyecto superaría su presupuesto del 100%. Horas disponibles: " + horasDisponibles);
+            }
+        }
+        // -----------------------------------------------------------
 
         // Si supera todas las pruebas, la guardamos en la base de datos
         Imputacion imputacionGuardada = imputacionRepository.save(nuevaImputacion);
