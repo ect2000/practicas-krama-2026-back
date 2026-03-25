@@ -75,6 +75,25 @@ public class UsuarioController {
         }).orElse(ResponseEntity.notFound().build()); // Si no lo encuentra, devuelve error 404
     }
 
+    @PostMapping("/login")
+    public ResponseEntity<?> loginUsuario(@RequestBody Usuario credenciales) {
+        
+        // 1. Buscamos en la base de datos si existe alguien con el email que nos envían
+        Usuario usuarioEncontrado = usuarioRepository.findByEmail(credenciales.getEmail());
+
+        // 2. Comprobamos si el usuario existe Y si la contraseña coincide
+        if (usuarioEncontrado != null && usuarioEncontrado.getPassword().equals(credenciales.getPassword())) {
+            
+            // ¡Éxito! El portero le deja pasar y devolvemos los datos del usuario
+            return ResponseEntity.ok(usuarioEncontrado);
+            
+        } else {
+            // Fracaso: o el email no existe, o la contraseña está mal. 
+            // Devolvemos un error 401 (No Autorizado)
+            return ResponseEntity.status(401).body("Error: Email o contraseña incorrectos");
+        }
+    }
+
     @DeleteMapping("/{id}")
     public void borrarUsuario(@PathVariable Long id) {
         usuarioRepository.deleteById(id);
