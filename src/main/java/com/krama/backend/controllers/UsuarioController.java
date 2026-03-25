@@ -59,20 +59,19 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Usuario> actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuarioActualizado) {
+    public Usuario actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuarioActualizado) {
         return usuarioRepository.findById(id).map(usuario -> {
-            // Actualizamos todos los campos del usuario
             usuario.setNombre(usuarioActualizado.getNombre());
             usuario.setApellidos(usuarioActualizado.getApellidos());
             usuario.setEmail(usuarioActualizado.getEmail());
             usuario.setTelefono(usuarioActualizado.getTelefono());
             usuario.setRol(usuarioActualizado.getRol());
-            usuario.setCliente(usuarioActualizado.getCliente());
             
-            // Guardamos y devolvemos un 200 OK con los datos guardados
-            return ResponseEntity.ok(usuarioRepository.save(usuario));
+            // ---> AÑADE ESTA LÍNEA PARA QUE ACTUALICE LA CONTRASEÑA <---
+            usuario.setPassword(usuarioActualizado.getPassword());
             
-        }).orElse(ResponseEntity.notFound().build()); // Si no lo encuentra, devuelve error 404
+            return usuarioRepository.save(usuario);
+        }).orElse(null);
     }
 
     @PostMapping("/login")
