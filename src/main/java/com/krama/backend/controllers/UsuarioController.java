@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import com.krama.backend.models.Usuario;
@@ -94,7 +96,14 @@ public class UsuarioController {
     }
 
     @DeleteMapping("/{id}")
-    public void borrarUsuario(@PathVariable Long id) {
-        usuarioRepository.deleteById(id);
+    public ResponseEntity<?> eliminarUsuario(@PathVariable Long id) {
+        try {
+            usuarioRepository.deleteById(id);
+            return ResponseEntity.ok().build(); // Devuelve 200 OK si lo logra
+        } catch (DataIntegrityViolationException e) {
+            // Si la base de datos lo bloquea, devolvemos un 409 Conflict
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("No se puede borrar el usuario porque tiene proyectos u horas asociadas.");
+        }
     }
 }
