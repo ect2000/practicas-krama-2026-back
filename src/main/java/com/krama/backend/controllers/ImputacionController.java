@@ -4,20 +4,14 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.krama.backend.models.Imputacion;
 import com.krama.backend.models.Proyecto;
+import com.krama.backend.models.Usuario;
 import com.krama.backend.repositories.ImputacionRepository;
 import com.krama.backend.repositories.ProyectoRepository;
+import com.krama.backend.repositories.UsuarioRepository; // ¡Importante nuevo repositorio!
 
 @RestController
 @RequestMapping("/api/imputaciones")
@@ -27,9 +21,11 @@ public class ImputacionController {
     @Autowired
     private ImputacionRepository imputacionRepository;
 
-    // AÑADIDO: Inyectamos el repositorio de proyectos para consultar el presupuesto
     @Autowired
     private ProyectoRepository proyectoRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     @GetMapping
     public List<Imputacion> obtenerTodasLasImputaciones() {
@@ -49,49 +45,51 @@ public class ImputacionController {
     @PostMapping
     public ResponseEntity<?> crearImputacion(@RequestBody Imputacion nuevaImputacion) {
         
-        // 1. Validar que las horas no vengan vacías y sean mayores a 0
+        // 1. Validar que vengan objetos con ID válido
+        if (nuevaImputacion.getProyecto() == null || nuevaImputacion.getProyecto().getId() == null) {
+            return ResponseEntity.badRequest().body("Error: Debes indicar un ID de Proyecto válido.");
+        }
+        if (nuevaImputacion.getUsuario() == null || nuevaImputacion.getUsuario().getId() == null) {
+            return ResponseEntity.badRequest().body("Error: Debes indicar un ID de Usuario válido.");
+        }
+
+        // 2. Comprobar que el Proyecto realmente existe en la Base de Datos
+        Proyecto proyecto = proyectoRepository.findById(nuevaImputacion.getProyecto().getId()).orElse(null);
+        if (proyecto == null) {
+            return ResponseEntity.badRequest().body("Error: El Proyecto con ID " + nuevaImputacion.getProyecto().getId() + " NO existe.");
+        }
+
+        // 3. Comprobar que el Usuario realmente existe en la Base de Datos
+        Usuario usuario = usuarioRepository.findById(nuevaImputacion.getUsuario().getId()).orElse(null);
+        if (usuario == null) {
+            return ResponseEntity.badRequest().body("Error: El Usuario con ID " + nuevaImputacion.getUsuario().getId() + " NO existe.");
+        }
+
+        // 4. Validar las horas
         if (nuevaImputacion.getHoras() == null || nuevaImputacion.getHoras() <= 0) {
             return ResponseEntity.badRequest().body("Error: Las horas imputadas deben ser un número mayor a 0.");
         }
-
-        // 2. Validar que las horas tengan sentido (nadie trabaja más de 24h al día)
         if (nuevaImputacion.getHoras() > 24) {
             return ResponseEntity.badRequest().body("Error: No puedes imputar más de 24 horas en un solo registro.");
         }
 
-        // 3. Validar que la imputación esté asignada a quién y dónde corresponde
-        if (nuevaImputacion.getProyecto() == null || nuevaImputacion.getUsuario() == null) {
-            return ResponseEntity.badRequest().body("Error: Toda imputación debe tener asignado un proyecto y un usuario.");
-        }
-
-        // --- NUEVA VALIDACIÓN: COMPROBAR PRESUPUESTO DEL PROYECTO ---
-        // Buscamos el proyecto en la base de datos usando el ID que nos llega
-        Proyecto proyecto = proyectoRepository.findById(nuevaImputacion.getProyecto().getId()).orElse(null);
-        
-        if (proyecto != null && proyecto.getHorasPresupuestadas() != null) {
-            // Buscamos todas las imputaciones que ya tiene este proyecto
+        // 5. Validar Presupuesto
+        if (proyecto.getHorasPresupuestadas() != null) {
             List<Imputacion> imputacionesActuales = imputacionRepository.findByProyectoId(proyecto.getId());
-            
-            // Sumamos las horas ya gastadas
             double horasGastadas = 0.0;
             for (Imputacion imp : imputacionesActuales) {
                 if (imp.getHoras() != null) {
                     horasGastadas += imp.getHoras();
                 }
             }
-            
-            // Verificamos si las horas actuales + las nuevas superan lo presupuestado
             if ((horasGastadas + nuevaImputacion.getHoras()) > proyecto.getHorasPresupuestadas()) {
                 double horasDisponibles = proyecto.getHorasPresupuestadas() - horasGastadas;
-                return ResponseEntity.badRequest().body("Error: No puedes imputar estas horas. El proyecto superaría su presupuesto del 100%. Horas disponibles: " + horasDisponibles);
+                return ResponseEntity.badRequest().body("Error: No puedes imputar. Superarías el presupuesto. Horas disponibles: " + horasDisponibles);
             }
         }
-        // -----------------------------------------------------------
 
-        // Si supera todas las pruebas, la guardamos en la base de datos
+        // 6. Si todo es correcto, guardamos
         Imputacion imputacionGuardada = imputacionRepository.save(nuevaImputacion);
-        
-        // Devolvemos la respuesta exitosa con los datos guardados
         return ResponseEntity.ok(imputacionGuardada);
     }
 
