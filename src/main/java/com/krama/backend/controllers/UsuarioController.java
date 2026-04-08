@@ -36,6 +36,14 @@ public class UsuarioController {
         return usuarioRepository.findAll();
     }
 
+    // Este endpoint nos permite buscar a un usuario específico por su ID
+    @GetMapping("/{id}")
+    public ResponseEntity<Usuario> obtenerUsuarioPorId(@PathVariable Long id) {
+        return usuarioRepository.findById(id)
+                .map(usuario -> ResponseEntity.ok().body(usuario))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping
     public ResponseEntity<?> crearUsuario(@RequestBody Usuario nuevoUsuario) {
         

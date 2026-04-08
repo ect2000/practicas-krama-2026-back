@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -43,7 +44,7 @@ public class Usuario {
 
     // --- CAMBIO IMPORTANTE AQUÍ ---
     // mappedBy indica que la configuración principal de esta relación la tiene la clase Proyecto en su variable "usuarios"
-    @ManyToMany(mappedBy = "usuarios")
+    @ManyToMany(mappedBy = "usuarios", fetch = FetchType.EAGER)
     @JsonIgnoreProperties("usuarios")
     private List<Proyecto> proyectos;
 
