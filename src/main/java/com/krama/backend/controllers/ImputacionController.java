@@ -9,9 +9,11 @@ import org.springframework.web.bind.annotation.*;
 import com.krama.backend.models.Imputacion;
 import com.krama.backend.models.Proyecto;
 import com.krama.backend.models.Usuario;
+import com.krama.backend.models.Notificacion;
 import com.krama.backend.repositories.ImputacionRepository;
 import com.krama.backend.repositories.ProyectoRepository;
-import com.krama.backend.repositories.UsuarioRepository; // ¡Importante nuevo repositorio!
+import com.krama.backend.repositories.UsuarioRepository;
+import com.krama.backend.repositories.NotificacionRepository;
 
 @RestController
 @RequestMapping("/api/imputaciones")
@@ -26,6 +28,9 @@ public class ImputacionController {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private NotificacionRepository notificacionRepository;
 
     @GetMapping
     public List<Imputacion> obtenerTodasLasImputaciones() {
@@ -45,7 +50,6 @@ public class ImputacionController {
     @PostMapping
     public ResponseEntity<?> crearImputacion(@RequestBody Imputacion nuevaImputacion) {
         
-        // 1. Validar que vengan objetos con ID válido
         if (nuevaImputacion.getProyecto() == null || nuevaImputacion.getProyecto().getId() == null) {
             return ResponseEntity.badRequest().body("Error: Debes indicar un ID de Proyecto válido.");
         }
@@ -53,19 +57,16 @@ public class ImputacionController {
             return ResponseEntity.badRequest().body("Error: Debes indicar un ID de Usuario válido.");
         }
 
-        // 2. Comprobar que el Proyecto realmente existe en la Base de Datos
         Proyecto proyecto = proyectoRepository.findById(nuevaImputacion.getProyecto().getId()).orElse(null);
         if (proyecto == null) {
             return ResponseEntity.badRequest().body("Error: El Proyecto con ID " + nuevaImputacion.getProyecto().getId() + " NO existe.");
         }
 
-        // 3. Comprobar que el Usuario realmente existe en la Base de Datos
         Usuario usuario = usuarioRepository.findById(nuevaImputacion.getUsuario().getId()).orElse(null);
         if (usuario == null) {
             return ResponseEntity.badRequest().body("Error: El Usuario con ID " + nuevaImputacion.getUsuario().getId() + " NO existe.");
         }
 
-        // 4. Validar las horas
         if (nuevaImputacion.getHoras() == null || nuevaImputacion.getHoras() <= 0) {
             return ResponseEntity.badRequest().body("Error: Las horas imputadas deben ser un número mayor a 0.");
         }
@@ -73,7 +74,6 @@ public class ImputacionController {
             return ResponseEntity.badRequest().body("Error: No puedes imputar más de 24 horas en un solo registro.");
         }
 
-        // 5. Validar Presupuesto
         if (proyecto.getHorasPresupuestadas() != null) {
             List<Imputacion> imputacionesActuales = imputacionRepository.findByProyectoId(proyecto.getId());
             double horasGastadas = 0.0;
@@ -88,8 +88,22 @@ public class ImputacionController {
             }
         }
 
-        // 6. Si todo es correcto, guardamos
         Imputacion imputacionGuardada = imputacionRepository.save(nuevaImputacion);
+
+        // Generar Notificación Automática
+        Notificacion aviso = new Notificacion();
+        aviso.setTitulo("Nueva Imputación");
+        
+        String anotacion = nuevaImputacion.getAnotaciones() != null && !nuevaImputacion.getAnotaciones().trim().isEmpty() 
+                           ? nuevaImputacion.getAnotaciones() 
+                           : "Sin comentarios";
+        
+        aviso.setMensaje("El usuario " + usuario.getNombre() + " ha añadido " + nuevaImputacion.getHoras() + 
+                         " h al proyecto '" + proyecto.getNombre() + "' con el comentario: " + anotacion);
+        aviso.setColor("tertiary");
+        aviso.setIcono("time-outline");
+        notificacionRepository.save(aviso);
+
         return ResponseEntity.ok(imputacionGuardada);
     }
 
