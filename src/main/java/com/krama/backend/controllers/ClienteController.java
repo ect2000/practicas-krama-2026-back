@@ -37,15 +37,17 @@ public class ClienteController {
     }
 
     // 3. ACTUALIZAR (PUT) - Editar un cliente existente
-    // La URL será algo como /api/clientes/1 (donde 1 es el ID)
     @PutMapping("/{id}")
     public Cliente actualizarCliente(@PathVariable Long id, @RequestBody Cliente clienteActualizado) {
-        // Primero buscamos si el cliente existe. Si existe, lo actualizamos.
         return clienteRepository.findById(id).map(cliente -> {
+            
+            // ---> AÑADIMOS ESTA LÍNEA <---
+            cliente.setCodigo(clienteActualizado.getCodigo());
+            
             cliente.setNombre(clienteActualizado.getNombre());
             cliente.setDescripcion(clienteActualizado.getDescripcion());
             return clienteRepository.save(cliente);
-        }).orElse(null); // Si no existe, devolvemos null por ahora
+        }).orElse(null); 
     }
 
     // 4. BORRAR (DELETE) - Eliminar un cliente
