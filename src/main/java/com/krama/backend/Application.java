@@ -11,6 +11,7 @@ import com.krama.backend.models.Usuario;
 import com.krama.backend.repositories.ClienteRepository;
 import com.krama.backend.repositories.ProyectoRepository;
 import com.krama.backend.repositories.UsuarioRepository;
+import java.util.List;
 
 @SpringBootApplication
 public class Application {
@@ -37,7 +38,7 @@ public class Application {
                 usuario.setNombre("Admin");
                 usuario.setApellidos("Pruebas");
                 usuario.setEmail("admin@krama.com"); // Corregido: usamos setEmail en vez de setMail
-                usuario.setCliente(cliente); 
+                usuario.setClientes(List.of(cliente));
                 usuarioRepo.save(usuario);
 
                 // 3. Creamos un Proyecto de prueba

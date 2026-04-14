@@ -12,9 +12,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
 
 @Entity
 @Table(name = "usuarios")
@@ -38,9 +38,14 @@ public class Usuario {
 
     private String rol;
     
-    @ManyToOne
-    @JoinColumn(name = "id_cliente")
-    private Cliente cliente;
+    // Lo que debe ser (Asegúrate de importar java.util.List, @ManyToMany y @JoinTable)
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+        name = "usuario_cliente",
+        joinColumns = @JoinColumn(name = "usuario_id"),
+        inverseJoinColumns = @JoinColumn(name = "cliente_id")
+    )
+    private List<Cliente> clientes;
 
     // --- CAMBIO IMPORTANTE AQUÍ ---
     // mappedBy indica que la configuración principal de esta relación la tiene la clase Proyecto en su variable "usuarios"
