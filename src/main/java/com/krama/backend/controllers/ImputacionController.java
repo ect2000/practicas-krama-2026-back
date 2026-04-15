@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 import com.krama.backend.models.Imputacion;
 import com.krama.backend.models.Proyecto;
@@ -45,6 +46,22 @@ public class ImputacionController {
     @GetMapping("/proyecto/{proyectoId}")
     public List<Imputacion> obtenerImputacionesDeProyecto(@PathVariable Long proyectoId) {
         return imputacionRepository.findByProyectoId(proyectoId);
+    }
+
+    @GetMapping("/informe1")
+    public ResponseEntity<List<Imputacion>> obtenerInforme1(
+            @RequestParam(required = false) List<Long> usuarios, 
+            @RequestParam(required = false) List<Long> proyectos) {
+        
+        // Validamos que nos envíen al menos un usuario y un proyecto
+        if (usuarios == null || usuarios.isEmpty() || proyectos == null || proyectos.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Llamamos a nuestro nuevo método del repositorio
+        List<Imputacion> resultado = imputacionRepository.findByUsuarioIdInAndProyectoIdIn(usuarios, proyectos);
+        
+        return ResponseEntity.ok(resultado);
     }
 
     @PostMapping
