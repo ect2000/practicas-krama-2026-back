@@ -80,6 +80,20 @@ public class ImputacionController {
         return ResponseEntity.ok(resultado);
     }
 
+    @GetMapping("/informe3")
+    public ResponseEntity<List<Imputacion>> obtenerInforme3(@RequestParam Long clienteId) {
+        
+        // Validamos que nos llegue el ID del cliente
+        if (clienteId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Buscamos usando el método mágico del repositorio
+        List<Imputacion> resultado = imputacionRepository.findByProyectoClienteId(clienteId);
+        
+        return ResponseEntity.ok(resultado);
+    }
+
     @PostMapping
     public ResponseEntity<?> crearImputacion(@RequestBody Imputacion nuevaImputacion) {
         
