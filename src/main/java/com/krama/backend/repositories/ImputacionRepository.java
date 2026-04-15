@@ -14,4 +14,5 @@ public interface ImputacionRepository extends JpaRepository<Imputacion, Long> {
 
     // ---> AÑADE ESTA LÍNEA PARA EL INFORME 1 <---
     List<Imputacion> findByUsuarioIdInAndProyectoIdIn(List<Long> usuarioIds, List<Long> proyectoIds);
+    List<Imputacion> findByUsuarioIdAndFechaBetween(Long usuarioId, java.time.LocalDate fechaInicio, java.time.LocalDate fechaFin);
 }

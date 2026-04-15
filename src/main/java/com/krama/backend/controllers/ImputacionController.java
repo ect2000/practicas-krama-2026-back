@@ -63,6 +63,23 @@ public class ImputacionController {
         return ResponseEntity.ok(resultado);
     }
 
+    @GetMapping("/informe2")
+    public ResponseEntity<List<Imputacion>> obtenerInforme2(
+            @RequestParam Long usuarioId, 
+            @RequestParam java.time.LocalDate fechaInicio, 
+            @RequestParam java.time.LocalDate fechaFin) {
+        
+        // Validamos que nos envíen todos los datos
+        if (usuarioId == null || fechaInicio == null || fechaFin == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Buscamos las imputaciones del usuario en ese rango de fechas
+        List<Imputacion> resultado = imputacionRepository.findByUsuarioIdAndFechaBetween(usuarioId, fechaInicio, fechaFin);
+        
+        return ResponseEntity.ok(resultado);
+    }
+
     @PostMapping
     public ResponseEntity<?> crearImputacion(@RequestBody Imputacion nuevaImputacion) {
         
