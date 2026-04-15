@@ -14,6 +14,7 @@ import com.krama.backend.repositories.ImputacionRepository;
 import com.krama.backend.repositories.ProyectoRepository;
 import com.krama.backend.repositories.UsuarioRepository;
 import com.krama.backend.repositories.NotificacionRepository;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/imputaciones")
@@ -137,19 +138,27 @@ public class ImputacionController {
 
         Imputacion imputacionGuardada = imputacionRepository.save(nuevaImputacion);
 
-        // Generar Notificación Automática
-        Notificacion aviso = new Notificacion();
-        aviso.setTitulo("Nueva Imputación");
-        
-        String anotacion = nuevaImputacion.getAnotaciones() != null && !nuevaImputacion.getAnotaciones().trim().isEmpty() 
-                           ? nuevaImputacion.getAnotaciones() 
-                           : "Sin comentarios";
-        
-        aviso.setMensaje("El usuario " + usuario.getNombre() + " ha añadido " + nuevaImputacion.getHoras() + 
-                         " h al proyecto '" + proyecto.getNombre() + "' con el comentario: " + anotacion);
-        aviso.setColor("tertiary");
-        aviso.setIcono("time-outline");
-        notificacionRepository.save(aviso);
+        // ---> Generar Notificación Automática <---
+        try {
+            Notificacion aviso = new Notificacion();
+            aviso.setTitulo("Nueva Imputación");
+            
+            String anotacion = nuevaImputacion.getAnotaciones() != null && !nuevaImputacion.getAnotaciones().trim().isEmpty() 
+                               ? nuevaImputacion.getAnotaciones() 
+                               : "Sin comentarios";
+            
+            aviso.setMensaje("El usuario " + usuario.getNombre() + " ha añadido " + nuevaImputacion.getHoras() + 
+                             " h al proyecto '" + proyecto.getNombre() + "' con el comentario: " + anotacion);
+            aviso.setColor("tertiary");
+            aviso.setIcono("time-outline");
+            
+            // AÑADIDO: Guardamos la fecha de creación (si tu modelo Notificacion tiene este campo)
+            // aviso.setFecha(LocalDate.now()); 
+            
+            notificacionRepository.save(aviso);
+        } catch (Exception e) {
+            System.err.println("Error al crear la notificación automática: " + e.getMessage());
+        }
 
         return ResponseEntity.ok(imputacionGuardada);
     }
