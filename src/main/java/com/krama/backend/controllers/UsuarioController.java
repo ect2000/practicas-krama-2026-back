@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.mindrot.jbcrypt.BCrypt;
 
 import com.krama.backend.models.Usuario;
 import com.krama.backend.repositories.UsuarioRepository;
@@ -47,24 +48,24 @@ public class UsuarioController {
     @PostMapping
     public ResponseEntity<?> crearUsuario(@RequestBody Usuario nuevoUsuario) {
         
-        // 1. Validamos si el email ya existe usando nuestro nuevo método del Repositorio
         if (usuarioRepository.existsByEmail(nuevoUsuario.getEmail())) {
-            // Si existe, devolvemos un error HTTP 400 (Bad Request) con un mensaje claro
             return ResponseEntity.badRequest().body("Error: Ya existe una cuenta con el correo " + nuevoUsuario.getEmail());
         }
 
-        // 2. Si no existe, guardamos el usuario en la base de datos como siempre
-        Usuario usuarioGuardado = usuarioRepository.save(nuevoUsuario);
-        
-        // 3. Intentamos enviar el correo electrónico
-        try {
-            emailService.enviarEmailBienvenida(usuarioGuardado.getEmail(), usuarioGuardado.getNombre());
-            System.out.println("¡Correo de bienvenida enviado con éxito a " + usuarioGuardado.getEmail() + "!");
-        } catch (Exception e) {
-            System.err.println("Error al enviar el correo a " + usuarioGuardado.getEmail() + ": " + e.getMessage());
+        // ---> NUEVO: Encriptamos la contraseña antes de guardarla <---
+        if (nuevoUsuario.getPassword() != null && !nuevoUsuario.getPassword().isEmpty()) {
+            String hash = BCrypt.hashpw(nuevoUsuario.getPassword(), BCrypt.gensalt());
+            nuevoUsuario.setPassword(hash);
         }
 
-        // 4. Devolvemos el usuario guardado al frontend con un código HTTP 200 (OK)
+        Usuario usuarioGuardado = usuarioRepository.save(nuevoUsuario);
+        
+        try {
+            emailService.enviarEmailBienvenida(usuarioGuardado.getEmail(), usuarioGuardado.getNombre());
+        } catch (Exception e) {
+            System.err.println("Error al enviar el correo: " + e.getMessage());
+        }
+
         return ResponseEntity.ok(usuarioGuardado);
     }
 
@@ -80,10 +81,10 @@ public class UsuarioController {
             
             // SOLUCIÓN CONTRASEÑA: Solo la cambiamos si nos llega una nueva y no está vacía
             if (usuarioActualizado.getPassword() != null && !usuarioActualizado.getPassword().isEmpty()) {
-                usuario.setPassword(usuarioActualizado.getPassword());
+                String hash = BCrypt.hashpw(usuarioActualizado.getPassword(), BCrypt.gensalt());
+                usuario.setPassword(hash);
             }
 
-            // EXTRA: Debemos guardar las listas de clientes y proyectos que conseguiste enviar desde Angular
             if (usuarioActualizado.getClientes() != null) {
                 usuario.setClientes(usuarioActualizado.getClientes());
             }
@@ -97,19 +98,12 @@ public class UsuarioController {
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUsuario(@RequestBody Usuario credenciales) {
-        
-        // 1. Buscamos en la base de datos si existe alguien con el email que nos envían
         Usuario usuarioEncontrado = usuarioRepository.findByEmail(credenciales.getEmail());
 
-        // 2. Comprobamos si el usuario existe Y si la contraseña coincide
-        if (usuarioEncontrado != null && usuarioEncontrado.getPassword().equals(credenciales.getPassword())) {
-            
-            // ¡Éxito! El portero le deja pasar y devolvemos los datos del usuario
+        // ---> NUEVO: Usamos BCrypt.checkpw para comparar la contraseña plana con el Hash <---
+        if (usuarioEncontrado != null && BCrypt.checkpw(credenciales.getPassword(), usuarioEncontrado.getPassword())) {
             return ResponseEntity.ok(usuarioEncontrado);
-            
         } else {
-            // Fracaso: o el email no existe, o la contraseña está mal. 
-            // Devolvemos un error 401 (No Autorizado)
             return ResponseEntity.status(401).body("Error: Email o contraseña incorrectos");
         }
     }
