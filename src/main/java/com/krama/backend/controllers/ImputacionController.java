@@ -14,7 +14,6 @@ import com.krama.backend.repositories.ImputacionRepository;
 import com.krama.backend.repositories.ProyectoRepository;
 import com.krama.backend.repositories.UsuarioRepository;
 import com.krama.backend.repositories.NotificacionRepository;
-import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/imputaciones")
