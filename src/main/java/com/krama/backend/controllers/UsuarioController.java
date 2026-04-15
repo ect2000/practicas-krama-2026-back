@@ -32,6 +32,9 @@ public class UsuarioController {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private com.krama.backend.security.JwtUtil jwtUtil;
+
     @GetMapping
     public List<Usuario> obtenerTodosLosUsuarios() {
         return usuarioRepository.findAll();
@@ -52,7 +55,7 @@ public class UsuarioController {
             return ResponseEntity.badRequest().body("Error: Ya existe una cuenta con el correo " + nuevoUsuario.getEmail());
         }
 
-        // ---> NUEVO: Encriptamos la contraseña antes de guardarla <---
+        // ---> Encriptamos la contraseña antes de guardarla <---
         if (nuevoUsuario.getPassword() != null && !nuevoUsuario.getPassword().isEmpty()) {
             String hash = BCrypt.hashpw(nuevoUsuario.getPassword(), BCrypt.gensalt());
             nuevoUsuario.setPassword(hash);
@@ -100,9 +103,18 @@ public class UsuarioController {
     public ResponseEntity<?> loginUsuario(@RequestBody Usuario credenciales) {
         Usuario usuarioEncontrado = usuarioRepository.findByEmail(credenciales.getEmail());
 
-        // ---> NUEVO: Usamos BCrypt.checkpw para comparar la contraseña plana con el Hash <---
+        // Usamos BCrypt.checkpw para comparar la contraseña plana con el Hash
         if (usuarioEncontrado != null && BCrypt.checkpw(credenciales.getPassword(), usuarioEncontrado.getPassword())) {
-            return ResponseEntity.ok(usuarioEncontrado);
+            
+            // ---> NUEVO: ¡MAGIA! Creamos el token <---
+            String tokenGenerado = jwtUtil.generarToken(usuarioEncontrado);
+            
+            // Devolvemos el usuario Y el token a Angular empaquetados en un Mapa
+            java.util.Map<String, Object> respuesta = new java.util.HashMap<>();
+            respuesta.put("usuario", usuarioEncontrado);
+            respuesta.put("token", tokenGenerado);
+            
+            return ResponseEntity.ok(respuesta);
         } else {
             return ResponseEntity.status(401).body("Error: Email o contraseña incorrectos");
         }
@@ -112,9 +124,8 @@ public class UsuarioController {
     public ResponseEntity<?> eliminarUsuario(@PathVariable Long id) {
         try {
             usuarioRepository.deleteById(id);
-            return ResponseEntity.ok().build(); // Devuelve 200 OK si lo logra
+            return ResponseEntity.ok().build(); 
         } catch (DataIntegrityViolationException e) {
-            // Si la base de datos lo bloquea, devolvemos un 409 Conflict
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("No se puede borrar el usuario porque tiene proyectos u horas asociadas.");
         }
