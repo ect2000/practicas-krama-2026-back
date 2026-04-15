@@ -71,14 +71,25 @@ public class UsuarioController {
     @PutMapping("/{id}")
     public Usuario actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuarioActualizado) {
         return usuarioRepository.findById(id).map(usuario -> {
+            // Actualizamos los datos básicos
             usuario.setNombre(usuarioActualizado.getNombre());
             usuario.setApellidos(usuarioActualizado.getApellidos());
             usuario.setEmail(usuarioActualizado.getEmail());
             usuario.setTelefono(usuarioActualizado.getTelefono());
             usuario.setRol(usuarioActualizado.getRol());
             
-            // ---> AÑADE ESTA LÍNEA PARA QUE ACTUALICE LA CONTRASEÑA <---
-            usuario.setPassword(usuarioActualizado.getPassword());
+            // SOLUCIÓN CONTRASEÑA: Solo la cambiamos si nos llega una nueva y no está vacía
+            if (usuarioActualizado.getPassword() != null && !usuarioActualizado.getPassword().isEmpty()) {
+                usuario.setPassword(usuarioActualizado.getPassword());
+            }
+
+            // EXTRA: Debemos guardar las listas de clientes y proyectos que conseguiste enviar desde Angular
+            if (usuarioActualizado.getClientes() != null) {
+                usuario.setClientes(usuarioActualizado.getClientes());
+            }
+            if (usuarioActualizado.getProyectos() != null) {
+                usuario.setProyectos(usuarioActualizado.getProyectos());
+            }
             
             return usuarioRepository.save(usuario);
         }).orElse(null);
