@@ -97,6 +97,7 @@ public class ImputacionController {
     @PostMapping
     public ResponseEntity<?> crearImputacion(@RequestBody Imputacion nuevaImputacion) {
         
+        // 1. Validaciones básicas de existencia
         if (nuevaImputacion.getProyecto() == null || nuevaImputacion.getProyecto().getId() == null) {
             return ResponseEntity.badRequest().body("Error: Debes indicar un ID de Proyecto válido.");
         }
@@ -114,13 +115,37 @@ public class ImputacionController {
             return ResponseEntity.badRequest().body("Error: El Usuario con ID " + nuevaImputacion.getUsuario().getId() + " NO existe.");
         }
 
+        // 2. Validaciones de horas básicas
         if (nuevaImputacion.getHoras() == null || nuevaImputacion.getHoras() <= 0) {
             return ResponseEntity.badRequest().body("Error: Las horas imputadas deben ser un número mayor a 0.");
         }
-        if (nuevaImputacion.getHoras() > 24) {
-            return ResponseEntity.badRequest().body("Error: No puedes imputar más de 24 horas en un solo registro.");
-        }
+        
+        // ---> NUEVA LÓGICA DE VALIDACIÓN DE 24 HORAS DIARIAS <---
+        try {
+            // Obtenemos cuántas horas lleva ya el usuario en ese día en concreto
+            Double horasYaImputadas = imputacionRepository.sumarHorasPorUsuarioYFecha(
+                usuario.getId(), 
+                nuevaImputacion.getFecha()
+            );
 
+            // Calculamos el total
+            Double totalHorasDia = horasYaImputadas + nuevaImputacion.getHoras();
+
+            // Comprobamos el límite
+            if (totalHorasDia > 24.0) {
+                // Si se pasa de 24, mandamos un error 400 (Bad Request) al frontend
+                double horasRestantes = 24.0 - horasYaImputadas;
+                return ResponseEntity.badRequest().body(
+                    "Error: El límite diario es de 24 horas. Ya tienes " + horasYaImputadas + 
+                    "h registradas en esta fecha. Solo puedes añadir " + horasRestantes + "h más."
+                );
+            }
+        } catch (Exception e) {
+            System.err.println("Error al validar las horas diarias: " + e.getMessage());
+        }
+        // ---> FIN DE LA NUEVA LÓGICA <---
+
+        // 3. Validación de Presupuesto del Proyecto
         if (proyecto.getHorasPresupuestadas() != null) {
             List<Imputacion> imputacionesActuales = imputacionRepository.findByProyectoId(proyecto.getId());
             double horasGastadas = 0.0;
@@ -135,12 +160,11 @@ public class ImputacionController {
             }
         }
 
-        // ---> Generar Notificación Automática <---
+        // 4. Guardamos la imputación
         Imputacion imputacionGuardada = imputacionRepository.save(nuevaImputacion);
 
-        // ---> NUEVA LÓGICA DE NOTIFICACIÓN <---
+        // 5. Lógica de Notificación al Encargado
         try {
-            // Obtenemos el encargado directamente del proyecto
             Usuario encargado = proyecto.getEncargado();
 
             if (encargado != null) {
@@ -156,7 +180,7 @@ public class ImputacionController {
                 aviso.setColor("tertiary");
                 aviso.setIcono("time-outline");
                 
-                // Asignamos el destinatario único (el encargado del proyecto)
+                // Asignamos el destinatario único
                 aviso.setUsuarioDestino(encargado); 
                 
                 notificacionRepository.save(aviso);

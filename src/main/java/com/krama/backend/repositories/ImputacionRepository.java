@@ -1,7 +1,10 @@
 package com.krama.backend.repositories;
 
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.krama.backend.models.Imputacion;
@@ -16,4 +19,6 @@ public interface ImputacionRepository extends JpaRepository<Imputacion, Long> {
     List<Imputacion> findByUsuarioIdInAndProyectoIdIn(List<Long> usuarioIds, List<Long> proyectoIds);
     List<Imputacion> findByUsuarioIdAndFechaBetween(Long usuarioId, java.time.LocalDate fechaInicio, java.time.LocalDate fechaFin);
     List<Imputacion> findByProyectoClienteId(Long clienteId);
+    @Query("SELECT COALESCE(SUM(i.horas), 0) FROM Imputacion i WHERE i.usuario.id = :usuarioId AND i.fecha = :fecha")
+    Double sumarHorasPorUsuarioYFecha(@Param("usuarioId") Long usuarioId, @Param("fecha") LocalDate fecha);
 }
