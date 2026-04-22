@@ -1,6 +1,7 @@
 package com.krama.backend.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.krama.backend.models.Notificacion;
 import com.krama.backend.repositories.NotificacionRepository;
@@ -14,8 +15,13 @@ public class NotificacionController {
     @Autowired
     private NotificacionRepository notificacionRepository;
 
-    @GetMapping
-    public List<Notificacion> obtenerTodas() {
-        return notificacionRepository.findAll();
+    // ---> NUEVO: Endpoint para buscar notificaciones de un usuario específico <---
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<List<Notificacion>> obtenerPorUsuario(@PathVariable Long usuarioId) {
+        
+        // Llamamos al método que creaste en NotificacionRepository
+        List<Notificacion> misNotificaciones = notificacionRepository.findByUsuarioDestinoIdOrderByIdDesc(usuarioId);
+        
+        return ResponseEntity.ok(misNotificaciones);
     }
 }
