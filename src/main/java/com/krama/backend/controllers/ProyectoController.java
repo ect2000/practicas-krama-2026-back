@@ -127,9 +127,9 @@ public class ProyectoController {
             proyecto.setHorasPresupuestadas(proyectoActualizado.getHorasPresupuestadas());
             proyecto.setCliente(proyectoActualizado.getCliente());
             proyecto.setUsuarios(proyectoActualizado.getUsuarios());
-            
-            // ---> AÑADE ESTA LÍNEA PARA GUARDAR EL ENCARGADO <---
             proyecto.setEncargado(proyectoActualizado.getEncargado());
+            proyecto.setHorasPresupuestadas(proyectoActualizado.getHorasPresupuestadas());
+            proyecto.setCosteTotal(proyectoActualizado.getCosteTotal());
             
             return proyectoRepository.save(proyecto);
         }).orElse(null);
