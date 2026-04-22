@@ -1,20 +1,9 @@
 package com.krama.backend.models;
 
 import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
 
 @Entity
 @Table(name = "proyectos")
@@ -37,16 +26,19 @@ public class Proyecto {
     @JoinColumn(name = "id_cliente")
     private Cliente cliente;
 
-    // --- CAMBIO IMPORTANTE AQUÍ ---
-    // Cambiamos @ManyToOne por @ManyToMany
+    // ---> CAMBIO AQUÍ: Evitamos que el encargado intente cargar sus proyectos de nuevo <---
+    @ManyToOne
+    @JoinColumn(name = "id_encargado")
+    @JsonIgnoreProperties({"proyectos", "clientes", "password"}) 
+    private Usuario encargado;
+
     @ManyToMany
     @JoinTable(
-        name = "proyectos_usuarios", // Nombre de la nueva tabla intermedia que creará MariaDB
+        name = "proyectos_usuarios",
         joinColumns = @JoinColumn(name = "id_proyecto"),
         inverseJoinColumns = @JoinColumn(name = "id_usuario")
     )
-    // @JsonIgnoreProperties evita un bug muy común donde el JSON se vuelve infinito al leer la base de datos
+    // Esto ya lo tenías bien para los usuarios que trabajan en el proyecto
     @JsonIgnoreProperties("proyectos") 
     private List<Usuario> usuarios;
-
 }

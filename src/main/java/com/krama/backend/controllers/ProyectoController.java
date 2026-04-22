@@ -117,6 +117,8 @@ public class ProyectoController {
         return ResponseEntity.ok(proyectoGuardado);
     }
 
+    // Archivo: src/main/java/com/krama/backend/controllers/ProyectoController.java
+
     @PutMapping("/{id}")
     public Proyecto actualizarProyecto(@PathVariable Long id, @RequestBody Proyecto proyectoActualizado) {
         return proyectoRepository.findById(id).map(proyecto -> {
@@ -125,6 +127,10 @@ public class ProyectoController {
             proyecto.setHorasPresupuestadas(proyectoActualizado.getHorasPresupuestadas());
             proyecto.setCliente(proyectoActualizado.getCliente());
             proyecto.setUsuarios(proyectoActualizado.getUsuarios());
+            
+            // ---> AÑADE ESTA LÍNEA PARA GUARDAR EL ENCARGADO <---
+            proyecto.setEncargado(proyectoActualizado.getEncargado());
+            
             return proyectoRepository.save(proyecto);
         }).orElse(null);
     }

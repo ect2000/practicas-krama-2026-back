@@ -1,20 +1,10 @@
 package com.krama.backend.models;
 
 import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.*;
 import lombok.Data;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
 
 @Entity
 @Table(name = "usuarios")
@@ -26,7 +16,6 @@ public class Usuario {
     private Long id;
 
     private String nombre;
-
     private String apellidos;
     
     @Column(unique = true)
@@ -34,11 +23,12 @@ public class Usuario {
 
     private String telefono;
 
+    // Seguridad: Evitamos que la contraseña se envíe al frontend por accidente
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 
     private String rol;
     
-    // Lo que debe ser (Asegúrate de importar java.util.List, @ManyToMany y @JoinTable)
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "usuario_cliente",
@@ -47,10 +37,10 @@ public class Usuario {
     )
     private List<Cliente> clientes;
 
-    // --- CAMBIO IMPORTANTE AQUÍ ---
-    // mappedBy indica que la configuración principal de esta relación la tiene la clase Proyecto en su variable "usuarios"
+    // --- CAMBIO CLAVE AQUÍ ---
     @ManyToMany(mappedBy = "usuarios", fetch = FetchType.EAGER)
-    @JsonIgnoreProperties("usuarios")
+    // Al listar los proyectos de un usuario, ignoramos "usuarios" (para no volver aquí)
+    // e ignoramos "encargado" para evitar que se cargue de nuevo el perfil del administrador
+    @JsonIgnoreProperties({"usuarios", "encargado"}) 
     private List<Proyecto> proyectos;
-
 }

@@ -135,35 +135,36 @@ public class ImputacionController {
             }
         }
 
+        // ---> Generar Notificación Automática <---
         Imputacion imputacionGuardada = imputacionRepository.save(nuevaImputacion);
 
-        // ---> Generar Notificación Automática <---
+        // ---> NUEVA LÓGICA DE NOTIFICACIÓN <---
         try {
-            // 1. Buscamos a los responsables (asumimos que son los administradores)
-            // Asegúrate de escribir el rol exactamente igual a como lo guardas en tu BBDD
-            List<Usuario> responsables = usuarioRepository.findByRol("ADMIN"); 
+            // Obtenemos el encargado directamente del proyecto
+            Usuario encargado = proyecto.getEncargado();
 
-            String anotacion = nuevaImputacion.getAnotaciones() != null && !nuevaImputacion.getAnotaciones().trim().isEmpty() 
-                               ? nuevaImputacion.getAnotaciones() 
-                               : "Sin comentarios";
-            
-            String mensajeGenerado = "El usuario " + usuario.getNombre() + " ha añadido " + nuevaImputacion.getHoras() + 
-                             " h al proyecto '" + proyecto.getNombre() + "' con el comentario: " + anotacion;
-
-            // 2. Por cada responsable encontrado, le creamos su propia notificación
-            for (Usuario responsable : responsables) {
+            if (encargado != null) {
                 Notificacion aviso = new Notificacion();
                 aviso.setTitulo("Nueva Imputación");
-                aviso.setMensaje(mensajeGenerado);
+                
+                String anotacion = (nuevaImputacion.getAnotaciones() != null && !nuevaImputacion.getAnotaciones().trim().isEmpty()) 
+                                ? nuevaImputacion.getAnotaciones() 
+                                : "Sin comentarios";
+                
+                aviso.setMensaje("El usuario " + usuario.getNombre() + " ha añadido " + nuevaImputacion.getHoras() + 
+                                " h al proyecto '" + proyecto.getNombre() + "' con el comentario: " + anotacion);
                 aviso.setColor("tertiary");
                 aviso.setIcono("time-outline");
-                aviso.setUsuarioDestino(responsable); // Asignamos el destinatario
-
+                
+                // Asignamos el destinatario único (el encargado del proyecto)
+                aviso.setUsuarioDestino(encargado); 
+                
                 notificacionRepository.save(aviso);
+            } else {
+                System.out.println("Aviso: El proyecto '" + proyecto.getNombre() + "' no tiene un encargado asignado.");
             }
-
         } catch (Exception e) {
-            System.err.println("Error al crear la notificación automática: " + e.getMessage());
+            System.err.println("Error al crear la notificación para el encargado: " + e.getMessage());
         }
 
         return ResponseEntity.ok(imputacionGuardada);
