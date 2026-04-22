@@ -1,6 +1,7 @@
 package com.krama.backend.controllers;
 
 import java.util.List;
+import java.util.stream.Collectors; // IMPORTANTE: Añadido para el manejo de listas
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -18,7 +19,10 @@ import org.springframework.http.ResponseEntity;
 import org.mindrot.jbcrypt.BCrypt;
 
 import com.krama.backend.models.Usuario;
+import com.krama.backend.models.Cliente;
+import com.krama.backend.models.Proyecto;
 import com.krama.backend.repositories.UsuarioRepository;
+import com.krama.backend.repositories.ProyectoRepository; // IMPORTANTE: Añadido
 import com.krama.backend.services.EmailService;
 
 @RestController
@@ -28,6 +32,9 @@ public class UsuarioController {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private ProyectoRepository proyectoRepository; // Inyectamos el repositorio de proyectos
 
     @Autowired
     private EmailService emailService;
@@ -40,12 +47,45 @@ public class UsuarioController {
         return usuarioRepository.findAll();
     }
 
-    // Este endpoint nos permite buscar a un usuario específico por su ID
     @GetMapping("/{id}")
     public ResponseEntity<Usuario> obtenerUsuarioPorId(@PathVariable Long id) {
         return usuarioRepository.findById(id)
                 .map(usuario -> ResponseEntity.ok().body(usuario))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    // --- NUEVO MÉTODO DE VALIDACIÓN ---
+    private ResponseEntity<?> validarProyectosDeClientes(Usuario usuario) {
+        List<Cliente> clientesAsignados = usuario.getClientes();
+        List<Proyecto> proyectosAsignados = usuario.getProyectos();
+
+        // Si no hay clientes asignados, la regla dice que puede seleccionar entre todos.
+        // Si no hay proyectos asignados, no hay nada que validar.
+        if (clientesAsignados == null || clientesAsignados.isEmpty() || 
+            proyectosAsignados == null || proyectosAsignados.isEmpty()) {
+            return null; // Todo OK, pasa la validación
+        }
+
+        // Obtenemos una lista rápida con los IDs de los clientes seleccionados
+        List<Long> idsClientes = clientesAsignados.stream()
+                .map(Cliente::getId)
+                .collect(Collectors.toList());
+
+        // Verificamos cada proyecto que se intenta guardar
+        for (Proyecto p : proyectosAsignados) {
+            // Buscamos el proyecto real en la BBDD para evitar datos falseados del frontend
+            Proyecto proyectoReal = proyectoRepository.findById(p.getId()).orElse(null);
+
+            if (proyectoReal != null && proyectoReal.getCliente() != null) {
+                // Si el proyecto tiene un cliente, ese cliente DEBE estar en la lista de clientes del usuario
+                if (!idsClientes.contains(proyectoReal.getCliente().getId())) {
+                    return ResponseEntity.badRequest().body("Inyección de datos detectada: El proyecto ID " + 
+                        proyectoReal.getId() + " no pertenece a ninguno de los clientes asignados al usuario.");
+                }
+            }
+        }
+        
+        return null; // Todo OK
     }
 
     @PostMapping
@@ -55,7 +95,12 @@ public class UsuarioController {
             return ResponseEntity.badRequest().body("Error: Ya existe una cuenta con el correo " + nuevoUsuario.getEmail());
         }
 
-        // ---> Encriptamos la contraseña antes de guardarla <---
+        // Ejecutamos la validación de seguridad de los proyectos
+        ResponseEntity<?> errorValidacion = validarProyectosDeClientes(nuevoUsuario);
+        if (errorValidacion != null) {
+            return errorValidacion;
+        }
+
         if (nuevoUsuario.getPassword() != null && !nuevoUsuario.getPassword().isEmpty()) {
             String hash = BCrypt.hashpw(nuevoUsuario.getPassword(), BCrypt.gensalt());
             nuevoUsuario.setPassword(hash);
@@ -72,17 +117,23 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioGuardado);
     }
 
+    // OJO: Hemos cambiado a ResponseEntity<?> para poder devolver errores de validación
     @PutMapping("/{id}")
-    public Usuario actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuarioActualizado) {
+    public ResponseEntity<?> actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuarioActualizado) {
+        
+        // Ejecutamos la validación de seguridad de los proyectos
+        ResponseEntity<?> errorValidacion = validarProyectosDeClientes(usuarioActualizado);
+        if (errorValidacion != null) {
+            return errorValidacion;
+        }
+
         return usuarioRepository.findById(id).map(usuario -> {
-            // Actualizamos los datos básicos
             usuario.setNombre(usuarioActualizado.getNombre());
             usuario.setApellidos(usuarioActualizado.getApellidos());
             usuario.setEmail(usuarioActualizado.getEmail());
             usuario.setTelefono(usuarioActualizado.getTelefono());
             usuario.setRol(usuarioActualizado.getRol());
             
-            // SOLUCIÓN CONTRASEÑA: Solo la cambiamos si nos llega una nueva y no está vacía
             if (usuarioActualizado.getPassword() != null && !usuarioActualizado.getPassword().isEmpty()) {
                 String hash = BCrypt.hashpw(usuarioActualizado.getPassword(), BCrypt.gensalt());
                 usuario.setPassword(hash);
@@ -95,21 +146,19 @@ public class UsuarioController {
                 usuario.setProyectos(usuarioActualizado.getProyectos());
             }
             
-            return usuarioRepository.save(usuario);
-        }).orElse(null);
+            Usuario guardado = usuarioRepository.save(usuario);
+            return ResponseEntity.ok(guardado);
+            
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUsuario(@RequestBody Usuario credenciales) {
         Usuario usuarioEncontrado = usuarioRepository.findByEmail(credenciales.getEmail());
 
-        // Usamos BCrypt.checkpw para comparar la contraseña plana con el Hash
         if (usuarioEncontrado != null && BCrypt.checkpw(credenciales.getPassword(), usuarioEncontrado.getPassword())) {
-            
-            // ---> NUEVO: ¡MAGIA! Creamos el token <---
             String tokenGenerado = jwtUtil.generarToken(usuarioEncontrado);
             
-            // Devolvemos el usuario Y el token a Angular empaquetados en un Mapa
             java.util.Map<String, Object> respuesta = new java.util.HashMap<>();
             respuesta.put("usuario", usuarioEncontrado);
             respuesta.put("token", tokenGenerado);
