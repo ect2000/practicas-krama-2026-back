@@ -16,11 +16,22 @@ import java.util.List;
 @SpringBootApplication
 public class Application {
 
+    /**
+     * Método principal que arranca la aplicación Spring Boot.
+     * @param args Argumentos de línea de comandos.
+     */
     public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
     }
 
     // Este Bean se ejecuta automáticamente al arrancar el servidor
+    /**
+     * Inicializa datos de prueba en la base de datos si no existen clientes.
+     * @param clienteRepo Repositorio de clientes.
+     * @param usuarioRepo Repositorio de usuarios.
+     * @param proyectoRepo Repositorio de proyectos.
+     * @return CommandLineRunner que ejecuta la inicialización.
+     */
     @Bean
     CommandLineRunner initData(ClienteRepository clienteRepo, UsuarioRepository usuarioRepo, ProyectoRepository proyectoRepo) {
         return args -> {

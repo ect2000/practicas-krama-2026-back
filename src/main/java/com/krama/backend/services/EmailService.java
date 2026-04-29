@@ -14,6 +14,11 @@ public class EmailService {
     private JavaMailSender mailSender;
 
     // Función que recibe a quién va el correo y cómo se llama la persona
+    /**
+     * Envía un correo electrónico de bienvenida al usuario recién creado.
+     * @param destinatario Dirección de correo del destinatario.
+     * @param nombreUsuario Nombre del usuario para personalizar el mensaje.
+     */
     public void enviarEmailBienvenida(String destinatario, String nombreUsuario) {
         SimpleMailMessage mensaje = new SimpleMailMessage();
         

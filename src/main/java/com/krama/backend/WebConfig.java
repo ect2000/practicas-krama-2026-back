@@ -12,6 +12,10 @@ public class WebConfig implements WebMvcConfigurer {
     @Autowired
     private RoleInterceptor roleInterceptor;
 
+    /**
+     * Añade interceptores al registro de Spring MVC.
+     * @param registry Registro de interceptores donde se añade el RoleInterceptor.
+     */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         // Aquí registramos nuestro nuevo interceptor

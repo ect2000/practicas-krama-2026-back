@@ -43,11 +43,20 @@ public class ProyectoController {
     @Autowired
     private ClienteRepository clienteRepository;
 
+    /**
+     * Recupera una lista de todos los proyectos disponibles.
+     * @return Lista de proyectos.
+     */
     @GetMapping
     public List<Proyecto> obtenerTodosLosProyectos() {
         return proyectoRepository.findAll();
     }
 
+    /**
+     * Calcula las horas restantes y el estado del presupuesto para un proyecto dado su ID.
+     * @param id ID del proyecto.
+     * @return ResponseEntity con los datos de cálculo o notFound si no existe.
+     */
     @GetMapping("/{id}/horas-restantes")
     public ResponseEntity<?> calcularHorasRestantes(@PathVariable Long id) {
         
@@ -91,6 +100,11 @@ public class ProyectoController {
     }
 
     // --- CÓDIGO ACTUALIZADO A PRUEBA DE FALLOS ---
+    /**
+     * Crea y almacena un nuevo proyecto, validando el cliente y los usuarios asociados.
+     * @param nuevoProyecto Objeto proyecto a guardar.
+     * @return ResponseEntity con el proyecto creado o un error si los datos no son válidos.
+     */
     @PostMapping
     public ResponseEntity<?> crearProyecto(@RequestBody Proyecto nuevoProyecto) {
         
@@ -119,6 +133,12 @@ public class ProyectoController {
 
     // Archivo: src/main/java/com/krama/backend/controllers/ProyectoController.java
 
+    /**
+     * Actualiza los detalles de un proyecto existente.
+     * @param id ID del proyecto a actualizar.
+     * @param proyectoActualizado Datos actualizados del proyecto.
+     * @return El proyecto actualizado o null si no se encuentra.
+     */
     @PutMapping("/{id}")
     public Proyecto actualizarProyecto(@PathVariable Long id, @RequestBody Proyecto proyectoActualizado) {
         return proyectoRepository.findById(id).map(proyecto -> {
@@ -135,6 +155,10 @@ public class ProyectoController {
         }).orElse(null);
     }
 
+    /**
+     * Elimina un proyecto de la base de datos mediante su identificador.
+     * @param id ID del proyecto a eliminar.
+     */
     @DeleteMapping("/{id}")
     public void borrarProyecto(@PathVariable Long id) {
         proyectoRepository.deleteById(id);

@@ -7,6 +7,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
+    /**
+     * Configura las reglas de CORS para permitir peticiones desde el frontend.
+     * @param registry Registro de CORS a configurar.
+     */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**") // Permite el acceso a todas las rutas de tu API

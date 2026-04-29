@@ -42,11 +42,20 @@ public class UsuarioController {
     @Autowired
     private com.krama.backend.security.JwtUtil jwtUtil;
 
+    /**
+     * Devuelve una lista con todos los usuarios del sistema.
+     * @return Lista de todos los usuarios.
+     */
     @GetMapping
     public List<Usuario> obtenerTodosLosUsuarios() {
         return usuarioRepository.findAll();
     }
 
+    /**
+     * Busca y devuelve un usuario específico por su ID.
+     * @param id Identificador del usuario.
+     * @return ResponseEntity con el usuario encontrado o estado notFound.
+     */
     @GetMapping("/{id}")
     public ResponseEntity<Usuario> obtenerUsuarioPorId(@PathVariable Long id) {
         return usuarioRepository.findById(id)
@@ -55,6 +64,11 @@ public class UsuarioController {
     }
 
     // --- NUEVO MÉTODO DE VALIDACIÓN ---
+    /**
+     * Valida que los proyectos asignados al usuario pertenezcan a los clientes que tiene asignados.
+     * @param usuario Usuario con los proyectos y clientes a validar.
+     * @return Null si es válido, ResponseEntity con error en caso contrario.
+     */
     private ResponseEntity<?> validarProyectosDeClientes(Usuario usuario) {
         List<Cliente> clientesAsignados = usuario.getClientes();
         List<Proyecto> proyectosAsignados = usuario.getProyectos();
@@ -88,6 +102,11 @@ public class UsuarioController {
         return null; // Todo OK
     }
 
+    /**
+     * Registra un nuevo usuario encriptando su contraseña y enviando un email de bienvenida.
+     * @param nuevoUsuario Datos del usuario a crear.
+     * @return ResponseEntity con el usuario creado o un error si el correo ya existe.
+     */
     @PostMapping
     public ResponseEntity<?> crearUsuario(@RequestBody Usuario nuevoUsuario) {
         
@@ -118,6 +137,12 @@ public class UsuarioController {
     }
 
     // OJO: Hemos cambiado a ResponseEntity<?> para poder devolver errores de validación
+    /**
+     * Actualiza los datos de un usuario existente validando sus relaciones.
+     * @param id ID del usuario a modificar.
+     * @param usuarioActualizado Datos actualizados.
+     * @return ResponseEntity con el usuario guardado o un error de validación.
+     */
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizarUsuario(@PathVariable Long id, @RequestBody Usuario usuarioActualizado) {
         
@@ -152,6 +177,11 @@ public class UsuarioController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Autentica al usuario mediante email y contraseña, devolviendo un token JWT.
+     * @param credenciales Objeto con email y contraseña.
+     * @return ResponseEntity con el usuario y el token de sesión o un error 401.
+     */
     @PostMapping("/login")
     public ResponseEntity<?> loginUsuario(@RequestBody Usuario credenciales) {
         Usuario usuarioEncontrado = usuarioRepository.findByEmail(credenciales.getEmail());
@@ -169,6 +199,11 @@ public class UsuarioController {
         }
     }
 
+    /**
+     * Borra un usuario de la base de datos si no tiene restricciones de integridad.
+     * @param id ID del usuario a eliminar.
+     * @return ResponseEntity indicando éxito o conflicto si hay relaciones existentes.
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminarUsuario(@PathVariable Long id) {
         try {

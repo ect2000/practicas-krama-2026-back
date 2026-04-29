@@ -12,6 +12,14 @@ public class RoleInterceptor implements HandlerInterceptor {
     @Autowired
     private JwtUtil jwtUtil;
 
+    /**
+     * Intercepta las peticiones HTTP para verificar si el usuario tiene permiso (rol ADMIN) para acceder a ciertas rutas.
+     * @param request La petición HTTP.
+     * @param response La respuesta HTTP.
+     * @param handler El handler (controlador) de destino.
+     * @return true si se permite la petición, false en caso contrario.
+     * @throws Exception Si ocurre un error durante el proceso de intercepción.
+     */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String path = request.getRequestURI();

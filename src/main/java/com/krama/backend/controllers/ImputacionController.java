@@ -32,21 +32,41 @@ public class ImputacionController {
     @Autowired
     private NotificacionRepository notificacionRepository;
 
+    /**
+     * Obtiene una lista de todas las imputaciones registradas.
+     * @return Lista de imputaciones.
+     */
     @GetMapping
     public List<Imputacion> obtenerTodasLasImputaciones() {
         return imputacionRepository.findAll();
     }
 
+    /**
+     * Obtiene las imputaciones correspondientes a un usuario específico.
+     * @param usuarioId ID del usuario.
+     * @return Lista de imputaciones de ese usuario.
+     */
     @GetMapping("/usuario/{usuarioId}")
     public List<Imputacion> obtenerImputacionesDeUsuario(@PathVariable Long usuarioId) {
         return imputacionRepository.findByUsuarioId(usuarioId);
     }
 
+    /**
+     * Obtiene las imputaciones registradas para un proyecto específico.
+     * @param proyectoId ID del proyecto.
+     * @return Lista de imputaciones del proyecto.
+     */
     @GetMapping("/proyecto/{proyectoId}")
     public List<Imputacion> obtenerImputacionesDeProyecto(@PathVariable Long proyectoId) {
         return imputacionRepository.findByProyectoId(proyectoId);
     }
 
+    /**
+     * Genera un informe de imputaciones filtradas por listas de usuarios y proyectos.
+     * @param usuarios Lista de IDs de usuarios a incluir en el informe.
+     * @param proyectos Lista de IDs de proyectos a incluir.
+     * @return ResponseEntity con la lista de imputaciones filtradas o error si faltan parámetros.
+     */
     @GetMapping("/informe1")
     public ResponseEntity<List<Imputacion>> obtenerInforme1(
             @RequestParam(required = false) List<Long> usuarios, 
@@ -63,6 +83,13 @@ public class ImputacionController {
         return ResponseEntity.ok(resultado);
     }
 
+    /**
+     * Genera un informe de las horas imputadas por un usuario en un rango de fechas.
+     * @param usuarioId ID del usuario a consultar.
+     * @param fechaInicio Fecha inicial del rango.
+     * @param fechaFin Fecha final del rango.
+     * @return ResponseEntity con las imputaciones encontradas o error de validación.
+     */
     @GetMapping("/informe2")
     public ResponseEntity<List<Imputacion>> obtenerInforme2(
             @RequestParam Long usuarioId, 
@@ -80,6 +107,11 @@ public class ImputacionController {
         return ResponseEntity.ok(resultado);
     }
 
+    /**
+     * Obtiene un informe de las imputaciones relacionadas a un cliente.
+     * @param clienteId ID del cliente.
+     * @return ResponseEntity con la lista de imputaciones del cliente.
+     */
     @GetMapping("/informe3")
     public ResponseEntity<List<Imputacion>> obtenerInforme3(@RequestParam Long clienteId) {
         
@@ -94,6 +126,13 @@ public class ImputacionController {
         return ResponseEntity.ok(resultado);
     }
 
+    /**
+     * Crea una nueva imputación de horas en un proyecto.
+     * Realiza validaciones sobre el límite diario de horas y el presupuesto del proyecto.
+     * También notifica al encargado del proyecto en caso de éxito.
+     * @param nuevaImputacion Los datos de la nueva imputación a registrar.
+     * @return ResponseEntity con la imputación guardada o mensaje de error.
+     */
     @PostMapping
     public ResponseEntity<?> crearImputacion(@RequestBody Imputacion nuevaImputacion) {
         
@@ -194,6 +233,12 @@ public class ImputacionController {
         return ResponseEntity.ok(imputacionGuardada);
     }
 
+    /**
+     * Modifica los datos de una imputación existente.
+     * @param id ID de la imputación a modificar.
+     * @param imputacionActualizada Los nuevos datos de la imputación.
+     * @return La imputación actualizada o null si no se encuentra.
+     */
     @PutMapping("/{id}")
     public Imputacion actualizarImputacion(@PathVariable Long id, @RequestBody Imputacion imputacionActualizada) {
         return imputacionRepository.findById(id).map(imputacion -> {
@@ -206,6 +251,10 @@ public class ImputacionController {
         }).orElse(null);
     }
 
+    /**
+     * Borra una imputación del sistema usando su identificador.
+     * @param id ID de la imputación a borrar.
+     */
     @DeleteMapping("/{id}")
     public void borrarImputacion(@PathVariable Long id) {
         imputacionRepository.deleteById(id);

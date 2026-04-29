@@ -25,18 +25,33 @@ public class ClienteController {
     private ClienteRepository clienteRepository;
 
     // 1. LEER (GET) - Obtener todos los clientes
+    /**
+     * Obtiene una lista de todos los clientes registrados en el sistema.
+     * @return Lista de objetos Cliente.
+     */
     @GetMapping
     public List<Cliente> obtenerTodosLosClientes() {
         return clienteRepository.findAll();
     }
 
     // 2. CREAR (POST) - Guardar un cliente nuevo
+    /**
+     * Crea un nuevo cliente y lo guarda en la base de datos.
+     * @param nuevoCliente Objeto Cliente a guardar.
+     * @return El cliente guardado.
+     */
     @PostMapping
     public Cliente crearCliente(@RequestBody Cliente nuevoCliente) {
         return clienteRepository.save(nuevoCliente);
     }
 
     // 3. ACTUALIZAR (PUT) - Editar un cliente existente
+    /**
+     * Actualiza la información de un cliente existente basado en su ID.
+     * @param id Identificador del cliente.
+     * @param clienteActualizado Datos actualizados del cliente.
+     * @return El cliente actualizado o null si no se encuentra.
+     */
     @PutMapping("/{id}")
     public Cliente actualizarCliente(@PathVariable Long id, @RequestBody Cliente clienteActualizado) {
         return clienteRepository.findById(id).map(cliente -> {
@@ -52,6 +67,10 @@ public class ClienteController {
 
     // 4. BORRAR (DELETE) - Eliminar un cliente
     // La URL será algo como /api/clientes/1
+    /**
+     * Elimina un cliente del sistema utilizando su ID.
+     * @param id Identificador del cliente a eliminar.
+     */
     @DeleteMapping("/{id}")
     public void borrarCliente(@PathVariable Long id) {
         clienteRepository.deleteById(id);
