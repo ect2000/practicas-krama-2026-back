@@ -12,20 +12,13 @@ public class RoleInterceptor implements HandlerInterceptor {
     @Autowired
     private JwtUtil jwtUtil;
 
-    /**
-     * Intercepta las peticiones HTTP para verificar si el usuario tiene permiso (rol ADMIN) para acceder a ciertas rutas.
-     * @param request La petición HTTP.
-     * @param response La respuesta HTTP.
-     * @param handler El handler (controlador) de destino.
-     * @return true si se permite la petición, false en caso contrario.
-     * @throws Exception Si ocurre un error durante el proceso de intercepción.
-     */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String path = request.getRequestURI();
+        String method = request.getMethod(); // Obtenemos qué tipo de petición es (GET, POST, etc.)
 
         // ---> 1. PERMITIR SIEMPRE PETICIONES DE PRE-VUELO (CORS) <---
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+        if ("OPTIONS".equalsIgnoreCase(method)) {
             return true;
         }
 
@@ -41,25 +34,30 @@ public class RoleInterceptor implements HandlerInterceptor {
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
                 try {
-                    // Extraemos los datos. Si está caducado o corrupto, saltará al catch
                     String rol = jwtUtil.extractAllClaims(token).get("rol", String.class);
 
+                    // 1. Si es administrador, tiene acceso total a todo (GET, POST, PUT, DELETE)
                     if ("ADMIN".equals(rol)) {
                         return true; 
-                    } else {
-                        // El token es válido, pero no es ADMIN
-                        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Acceso denegado: Se requiere rol de Administrador");
-                        return false;
+                    } 
+                    
+                    // 2. Si es usuario normal, solo le permitimos peticiones de lectura (GET)
+                    // Esto permite llenar los selectores en imputaciones e informes sin dar permisos de edición
+                    if ("USUARIO".equals(rol) && "GET".equalsIgnoreCase(method)) {
+                        return true;
                     }
+
+                    // 3. Si es un USUARIO intentando hacer POST/PUT/DELETE, le denegamos el acceso
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Acceso denegado: No tienes permisos para modificar estos datos");
+                    return false;
+                    
                 } catch (Exception e) {
-                    // El token falló (está caducado, mal firmado, etc.)
                     System.out.println("Error validando token en Interceptor: " + e.getMessage());
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado. Por favor, inicie sesión nuevamente.");
                     return false;
                 }
             }
             
-            // Si no hay cabecera o no empieza con Bearer
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "No se proporcionó un token de autenticación válido");
             return false;
         }
