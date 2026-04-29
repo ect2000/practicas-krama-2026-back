@@ -33,17 +33,26 @@ public class RoleInterceptor implements HandlerInterceptor {
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 String token = authHeader.substring(7);
                 try {
+                    // Extraemos los datos. Si está caducado o corrupto, saltará al catch
                     String rol = jwtUtil.extractAllClaims(token).get("rol", String.class);
 
                     if ("ADMIN".equals(rol)) {
                         return true; 
+                    } else {
+                        // El token es válido, pero no es ADMIN
+                        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Acceso denegado: Se requiere rol de Administrador");
+                        return false;
                     }
                 } catch (Exception e) {
+                    // El token falló (está caducado, mal firmado, etc.)
                     System.out.println("Error validando token en Interceptor: " + e.getMessage());
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado. Por favor, inicie sesión nuevamente.");
+                    return false;
                 }
             }
             
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Acceso denegado: Se requiere rol de Administrador");
+            // Si no hay cabecera o no empieza con Bearer
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "No se proporcionó un token de autenticación válido");
             return false;
         }
 
