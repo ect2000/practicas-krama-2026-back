@@ -63,21 +63,27 @@ public class UsuarioController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // --- NUEVO MÉTODO DE VALIDACIÓN ---
+    // --- NUEVO MÉTODO DE VALIDACIÓN MODIFICADO ---
     /**
      * Valida que los proyectos asignados al usuario pertenezcan a los clientes que tiene asignados.
+     * Se omite esta comprobación para los usuarios con rol ADMIN.
      * @param usuario Usuario con los proyectos y clientes a validar.
      * @return Null si es válido, ResponseEntity con error en caso contrario.
      */
     private ResponseEntity<?> validarProyectosDeClientes(Usuario usuario) {
+        
+        // 1. EXCEPCIÓN DE SEGURIDAD: Los administradores gestionan todo, omitimos esta restricción
+        if ("ADMIN".equals(usuario.getRol())) {
+            return null; // Todo OK, pasa la validación automáticamente
+        }
+
         List<Cliente> clientesAsignados = usuario.getClientes();
         List<Proyecto> proyectosAsignados = usuario.getProyectos();
 
-        // Si no hay clientes asignados, la regla dice que puede seleccionar entre todos.
-        // Si no hay proyectos asignados, no hay nada que validar.
+        // Si no hay clientes o proyectos asignados, no hay nada que validar.
         if (clientesAsignados == null || clientesAsignados.isEmpty() || 
             proyectosAsignados == null || proyectosAsignados.isEmpty()) {
-            return null; // Todo OK, pasa la validación
+            return null; 
         }
 
         // Obtenemos una lista rápida con los IDs de los clientes seleccionados
@@ -87,11 +93,9 @@ public class UsuarioController {
 
         // Verificamos cada proyecto que se intenta guardar
         for (Proyecto p : proyectosAsignados) {
-            // Buscamos el proyecto real en la BBDD para evitar datos falseados del frontend
             Proyecto proyectoReal = proyectoRepository.findById(p.getId()).orElse(null);
 
             if (proyectoReal != null && proyectoReal.getCliente() != null) {
-                // Si el proyecto tiene un cliente, ese cliente DEBE estar en la lista de clientes del usuario
                 if (!idsClientes.contains(proyectoReal.getCliente().getId())) {
                     return ResponseEntity.badRequest().body("Inyección de datos detectada: El proyecto ID " + 
                         proyectoReal.getId() + " no pertenece a ninguno de los clientes asignados al usuario.");
