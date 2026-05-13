@@ -27,7 +27,7 @@ import com.krama.backend.services.EmailService;
 
 @RestController
 @RequestMapping("/api/usuarios")
-@CrossOrigin(origins = "http://localhost:8100")
+@CrossOrigin(origins = {"http://localhost:8100", "http://localhost", "capacitor://localhost"})
 public class UsuarioController {
 
     @Autowired
