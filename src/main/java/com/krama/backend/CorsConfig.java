@@ -14,7 +14,7 @@ public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**") // Permite el acceso a todas las rutas de tu API
-                .allowedOrigins("http://localhost:8100") // Indica el puerto de tu Ionic
+                .allowedOrigins("http://localhost:8100", "http://localhost", "capacitor://localhost") // Indica el puerto de tu Ionic
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Los métodos permitidos
                 .allowedHeaders("*")
                 .allowCredentials(true);
