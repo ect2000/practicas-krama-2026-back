@@ -10,6 +10,9 @@ import lombok.Data;
 @Entity
 @Table(name = "clientes")
 @Data
+/**
+ * Clase que representa a un cliente en el sistema.
+ */
 public class Cliente {
 
     @Id

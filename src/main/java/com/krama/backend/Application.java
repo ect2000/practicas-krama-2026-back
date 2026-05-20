@@ -13,6 +13,9 @@ import com.krama.backend.repositories.ProyectoRepository;
 import com.krama.backend.repositories.UsuarioRepository;
 import java.util.List;
 
+/**
+ * Clase principal que arranca la aplicación Spring Boot.
+ */
 @SpringBootApplication
 public class Application {
 

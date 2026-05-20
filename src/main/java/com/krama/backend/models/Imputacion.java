@@ -14,6 +14,9 @@ import jakarta.persistence.JoinColumn;
 @Entity
 @Table(name = "imputaciones")
 @Data
+/**
+ * Clase que representa una imputación de horas en el sistema.
+ */
 public class Imputacion {
 
     @Id

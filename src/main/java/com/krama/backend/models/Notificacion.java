@@ -12,6 +12,9 @@ import lombok.Data;
 @Entity
 @Table(name = "notificaciones")
 @Data
+/**
+ * Clase que representa una notificación en el sistema.
+ */
 public class Notificacion {
 
     @Id

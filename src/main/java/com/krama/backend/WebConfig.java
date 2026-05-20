@@ -7,6 +7,9 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+/**
+ * Configuración web general y de interceptores para la aplicación.
+ */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
@@ -23,6 +26,10 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(roleInterceptor);
     }
     // Archivo: CorsConfig.java
+    /**
+     * Configura las reglas de CORS para permitir peticiones desde el frontend.
+     * @param registry Registro de CORS a configurar.
+     */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")

@@ -8,6 +8,9 @@ import lombok.Data;
 @Entity
 @Table(name = "proyectos")
 @Data
+/**
+ * Clase que representa un proyecto en el sistema.
+ */
 public class Proyecto {
 
     @Id

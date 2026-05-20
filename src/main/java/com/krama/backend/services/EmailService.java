@@ -6,6 +6,9 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 // @Service le dice a Spring Boot que esta clase es un "trabajador" que hace tareas de lógica de negocio
+/**
+ * Servicio encargado del envío de correos electrónicos.
+ */
 @Service
 public class EmailService {
 

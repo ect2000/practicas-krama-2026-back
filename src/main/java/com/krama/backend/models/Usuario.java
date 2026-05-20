@@ -9,6 +9,9 @@ import lombok.Data;
 @Entity
 @Table(name = "usuarios")
 @Data
+/**
+ * Clase que representa a un usuario en el sistema.
+ */
 public class Usuario {
 
     @Id

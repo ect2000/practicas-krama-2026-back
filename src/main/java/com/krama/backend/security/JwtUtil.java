@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.Date;
 
+/**
+ * Utilidad para la gestión de tokens JWT (generación, validación, extracción de datos).
+ */
 @Component
 public class JwtUtil {
     

@@ -6,12 +6,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+/**
+ * Interceptor para verificar los roles y permisos de los usuarios en las peticiones.
+ */
 @Component
 public class RoleInterceptor implements HandlerInterceptor {
 
     @Autowired
     private JwtUtil jwtUtil;
 
+    /**
+     * Intercepta la petición antes de que llegue al controlador para verificar permisos de rol.
+     * @param request La petición HTTP.
+     * @param response La respuesta HTTP.
+     * @param handler El manejador seleccionado para la petición.
+     * @return true si la petición es permitida, false si es denegada.
+     * @throws Exception Si ocurre algún error procesando la petición.
+     */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String path = request.getRequestURI();
