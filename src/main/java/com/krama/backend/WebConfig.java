@@ -25,7 +25,7 @@ public class WebConfig implements WebMvcConfigurer {
         // Aquí registramos nuestro nuevo interceptor
         registry.addInterceptor(roleInterceptor);
     }
-    // Archivo: CorsConfig.java
+
     /**
      * Configura las reglas de CORS para permitir peticiones desde el frontend.
      * @param registry Registro de CORS a configurar.
@@ -33,8 +33,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                // Añadimos http://localhost (Android) y capacitor://localhost (iOS/Android)
-                .allowedOrigins("http://localhost:8100", "http://localhost", "capacitor://localhost")
+                // TRUCO: allowedOriginPatterns("*") es más flexible para el móvil y la web
+                .allowedOriginPatterns("*")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
