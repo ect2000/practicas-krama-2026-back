@@ -59,13 +59,17 @@ public class Application {
                 
             } else {
                 
-                // Si los datos ya existen, forzamos la actualización de la contraseña
+                // Si los datos ya existen, forzamos la actualización de la contraseña y el ROL
                 for (Usuario u : usuarios) {
                     if ("admin@krama.com".equals(u.getEmail())) {
                         String hashPassword = BCrypt.hashpw("123456", BCrypt.gensalt());
                         u.setPassword(hashPassword);
+                        
+                        // ¡AQUÍ ESTÁ LA LÍNEA MÁGICA QUE FALTABA!
+                        u.setRol("ADMIN"); 
+                        
                         usuarioRepo.save(u);
-                        System.out.println("✅ ÉXITO: Contraseña de administrador actualizada y cifrada.");
+                        System.out.println("✅ ÉXITO: Contraseña y ROL de administrador actualizados.");
                     }
                 }
             }
