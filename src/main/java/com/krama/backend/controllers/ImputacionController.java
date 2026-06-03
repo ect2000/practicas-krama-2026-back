@@ -17,7 +17,7 @@ import com.krama.backend.repositories.NotificacionRepository;
 
 @RestController
 @RequestMapping("/api/imputaciones")
-@CrossOrigin(origins = "http://localhost:8100")
+// @CrossOrigin(origins = "http://localhost:8100")
 /**
  * Controlador REST para la gestión de imputaciones de horas.
  */

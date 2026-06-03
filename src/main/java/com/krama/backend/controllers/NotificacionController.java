@@ -9,7 +9,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/notificaciones")
-@CrossOrigin(origins = "http://localhost:8100")
+// @CrossOrigin(origins = "http://localhost:8100")
 /**
  * Controlador REST para la gestión de notificaciones.
  */

@@ -18,7 +18,7 @@ import com.krama.backend.repositories.ClienteRepository;
 
 @RestController
 @RequestMapping("/api/clientes")
-@CrossOrigin(origins = "http://localhost:8100")
+// @CrossOrigin(origins = "http://localhost:8100")
 /**
  * Controlador REST para la gestión de clientes.
  */

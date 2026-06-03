@@ -27,7 +27,7 @@ import com.krama.backend.services.EmailService;
 
 @RestController
 @RequestMapping("/api/usuarios")
-@CrossOrigin(origins = {"http://localhost:8100", "http://localhost", "capacitor://localhost"})
+//@CrossOrigin(origins = {"http://localhost:8100", "http://localhost", "capacitor://localhost"})
 /**
  * Controlador REST para la gestión de usuarios y autenticación.
  */

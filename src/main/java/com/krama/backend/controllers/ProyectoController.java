@@ -27,7 +27,7 @@ import com.krama.backend.repositories.UsuarioRepository;
 
 @RestController
 @RequestMapping("/api/proyectos")
-@CrossOrigin(origins = "http://localhost:8100")
+// @CrossOrigin(origins = "http://localhost:8100")
 /**
  * Controlador REST para la gestión de proyectos.
  */
