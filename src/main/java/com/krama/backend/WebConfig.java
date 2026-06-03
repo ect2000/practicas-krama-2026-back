@@ -2,8 +2,11 @@ package com.krama.backend;
 
 import com.krama.backend.security.RoleInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -16,27 +19,33 @@ public class WebConfig implements WebMvcConfigurer {
     @Autowired
     private RoleInterceptor roleInterceptor;
 
-    /**
-     * Añade interceptores al registro de Spring MVC.
-     * @param registry Registro de interceptores donde se añade el RoleInterceptor.
-     */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // Aquí registramos nuestro nuevo interceptor
         registry.addInterceptor(roleInterceptor);
     }
 
     /**
-     * Configura las reglas de CORS para permitir peticiones desde el frontend.
-     * @param registry Registro de CORS a configurar.
+     * Filtro CORS global y de máxima prioridad.
+     * Soluciona el error "Response to preflight request doesn't pass access control check"
      */
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                // TRUCO: allowedOriginPatterns("*") es más flexible para el móvil y la web
-                .allowedOriginPatterns("*")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true);
+    @Bean
+    public CorsFilter corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+        
+        // Permite enviar credenciales (como tokens o cookies)
+        config.setAllowCredentials(true); 
+        
+        // Permite conexiones desde cualquier origen (tu localhost, la app de Android, etc.)
+        config.addAllowedOriginPattern("*"); 
+        
+        // Permite cualquier cabecera y cualquier método (GET, POST, OPTIONS, etc.)
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
+        
+        // Aplica estas reglas a TODAS las rutas de tu API
+        source.registerCorsConfiguration("/**", config);
+        
+        return new CorsFilter(source);
     }
 }
