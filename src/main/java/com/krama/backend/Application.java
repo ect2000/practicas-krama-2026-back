@@ -4,6 +4,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.mindrot.jbcrypt.BCrypt; // Importante para cifrar la contraseña
 
 import com.krama.backend.models.Cliente;
 import com.krama.backend.models.Proyecto;
@@ -51,8 +52,16 @@ public class Application {
                 Usuario usuario = new Usuario();
                 usuario.setNombre("Admin");
                 usuario.setApellidos("Pruebas");
-                usuario.setEmail("admin@krama.com"); // Corregido: usamos setEmail en vez de setMail
+                usuario.setEmail("admin@krama.com"); 
                 usuario.setClientes(List.of(cliente));
+                
+                // --- ¡AQUÍ ESTÁ LA CLAVE PARA EL LOGIN! ---
+                // Ciframos la contraseña "123456" y se la asignamos al usuario
+                String hashPassword = BCrypt.hashpw("123456", BCrypt.gensalt());
+                usuario.setPassword(hashPassword);
+                usuario.setRol("ADMIN"); // Le damos rol de administrador
+                // ------------------------------------------
+
                 usuarioRepo.save(usuario);
 
                 // 3. Creamos un Proyecto de prueba
@@ -66,6 +75,8 @@ public class Application {
                 proyecto.setUsuarios(java.util.List.of(usuario)); 
                 
                 proyectoRepo.save(proyecto);
+                
+                System.out.println("✅ ÉXITO: Datos creados. Puedes entrar con admin@krama.com y clave 123456");
             }
         };
     }
