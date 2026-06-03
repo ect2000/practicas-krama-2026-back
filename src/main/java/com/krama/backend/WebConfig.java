@@ -2,8 +2,10 @@ package com.krama.backend;
 
 import com.krama.backend.security.RoleInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -25,27 +27,26 @@ public class WebConfig implements WebMvcConfigurer {
     }
 
     /**
-     * Filtro CORS global y de máxima prioridad.
-     * Soluciona el error "Response to preflight request doesn't pass access control check"
+     * Filtro CORS con MÁXIMA PRIORIDAD.
+     * Se ejecutará antes que cualquier regla de seguridad interceptando el bloqueo.
      */
     @Bean
-    public CorsFilter corsFilter() {
+    public FilterRegistrationBean<CorsFilter> corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         
-        // Permite enviar credenciales (como tokens o cookies)
-        config.setAllowCredentials(true); 
-        
-        // Permite conexiones desde cualquier origen (tu localhost, la app de Android, etc.)
-        config.addAllowedOriginPattern("*"); 
-        
-        // Permite cualquier cabecera y cualquier método (GET, POST, OPTIONS, etc.)
+        config.setAllowCredentials(true);
+        config.addAllowedOriginPattern("*");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         
-        // Aplica estas reglas a TODAS las rutas de tu API
         source.registerCorsConfiguration("/**", config);
         
-        return new CorsFilter(source);
+        FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(new CorsFilter(source));
+        
+        // ¡ESTO ES LO MÁS IMPORTANTE! Fuerza al filtro a ser el primero de todos.
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        
+        return bean;
     }
 }
