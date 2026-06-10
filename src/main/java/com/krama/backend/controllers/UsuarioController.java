@@ -1,10 +1,9 @@
 package com.krama.backend.controllers;
 
 import java.util.List;
-import java.util.stream.Collectors; // IMPORTANTE: Añadido para el manejo de listas
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,12 +21,11 @@ import com.krama.backend.models.Usuario;
 import com.krama.backend.models.Cliente;
 import com.krama.backend.models.Proyecto;
 import com.krama.backend.repositories.UsuarioRepository;
-import com.krama.backend.repositories.ProyectoRepository; // IMPORTANTE: Añadido
+import com.krama.backend.repositories.ProyectoRepository;
 import com.krama.backend.services.EmailService;
 
 @RestController
 @RequestMapping("/api/usuarios")
-//@CrossOrigin(origins = {"http://localhost:8100", "http://localhost", "capacitor://localhost"})
 /**
  * Controlador REST para la gestión de usuarios y autenticación.
  */
@@ -37,7 +35,7 @@ public class UsuarioController {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
-    private ProyectoRepository proyectoRepository; // Inyectamos el repositorio de proyectos
+    private ProyectoRepository proyectoRepository;
 
     @Autowired
     private EmailService emailService;
@@ -66,7 +64,6 @@ public class UsuarioController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // --- NUEVO MÉTODO DE VALIDACIÓN MODIFICADO ---
     /**
      * Valida que los proyectos asignados al usuario pertenezcan a los clientes que tiene asignados.
      * Se omite esta comprobación para los usuarios con rol ADMIN.
@@ -111,6 +108,7 @@ public class UsuarioController {
 
     /**
      * Registra un nuevo usuario encriptando su contraseña y enviando un email de bienvenida.
+     * Si no se proporciona contraseña, se asigna '123456' por defecto.
      * @param nuevoUsuario Datos del usuario a crear.
      * @return ResponseEntity con el usuario creado o un error si el correo ya existe.
      */
@@ -127,10 +125,15 @@ public class UsuarioController {
             return errorValidacion;
         }
 
-        if (nuevoUsuario.getPassword() != null && !nuevoUsuario.getPassword().isEmpty()) {
-            String hash = BCrypt.hashpw(nuevoUsuario.getPassword(), BCrypt.gensalt());
-            nuevoUsuario.setPassword(hash);
+        // ---> SOLUCIÓN: ASIGNAR CONTRASEÑA POR DEFECTO <---
+        String passwordPlana = nuevoUsuario.getPassword();
+        if (passwordPlana == null || passwordPlana.trim().isEmpty()) {
+            passwordPlana = "123456"; // Contraseña que usarán la primera vez
         }
+        
+        // Ciframos la contraseña (ya sea la que escribieron o la de por defecto)
+        String hash = BCrypt.hashpw(passwordPlana, BCrypt.gensalt());
+        nuevoUsuario.setPassword(hash);
 
         Usuario usuarioGuardado = usuarioRepository.save(nuevoUsuario);
         
@@ -143,7 +146,6 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioGuardado);
     }
 
-    // OJO: Hemos cambiado a ResponseEntity<?> para poder devolver errores de validación
     /**
      * Actualiza los datos de un usuario existente validando sus relaciones.
      * @param id ID del usuario a modificar.
