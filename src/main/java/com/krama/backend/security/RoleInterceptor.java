@@ -28,18 +28,13 @@ public class RoleInterceptor implements HandlerInterceptor {
         String path = request.getRequestURI();
         String method = request.getMethod(); // Obtenemos qué tipo de petición es (GET, POST, etc.)
 
-        // ---> 1. PERMITIR SIEMPRE PETICIONES DE PRE-VUELO (CORS) <---
-        if ("OPTIONS".equalsIgnoreCase(method)) {
+        // ---> 1. PERMITIR SIEMPRE PETICIONES DE PRE-VUELO (CORS) Y EL LOGIN <---
+        if ("OPTIONS".equalsIgnoreCase(method) || path.contains("/login")) {
             return true;
         }
 
-        // Excepción para el Login
-        if (path.contains("/login")) {
-            return true;
-        }
-
-        // Protegemos las rutas críticas
-        if (path.startsWith("/api/usuarios") || path.startsWith("/api/clientes") || path.startsWith("/api/proyectos")) {
+        // ---> 2. PROTEGER TODA LA API EN GENERAL <---
+        if (path.startsWith("/api/")) {
             
             String authHeader = request.getHeader("Authorization");
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -47,20 +42,22 @@ public class RoleInterceptor implements HandlerInterceptor {
                 try {
                     String rol = jwtUtil.extractAllClaims(token).get("rol", String.class);
 
-                    // 1. Si es administrador, tiene acceso total a todo (GET, POST, PUT, DELETE)
+                    // 2.1 Si es administrador, tiene acceso total a todo
                     if ("ADMIN".equals(rol)) {
                         return true; 
                     } 
                     
-                    // 2. Si es usuario normal, solo le permitimos peticiones de lectura (GET)
-                    // Esto permite llenar los selectores en imputaciones e informes sin dar permisos de edición
-                    if ("USUARIO".equals(rol) && "GET".equalsIgnoreCase(method)) {
-                        return true;
+                    // 2.2 Si NO es administrador, protegemos la modificación de datos críticos
+                    if (path.startsWith("/api/usuarios") || path.startsWith("/api/clientes") || path.startsWith("/api/proyectos")) {
+                        // Si intenta hacer un POST, PUT o DELETE en rutas críticas, lo bloqueamos
+                        if (!"GET".equalsIgnoreCase(method)) {
+                            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Acceso denegado: Solo los administradores pueden modificar estos datos.");
+                            return false;
+                        }
                     }
 
-                    // 3. Si es un USUARIO intentando hacer POST/PUT/DELETE, le denegamos el acceso
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Acceso denegado: No tienes permisos para modificar estos datos");
-                    return false;
+                    // 2.3 Si es un GET (para cargar los desplegables) o va a otras rutas (como /api/imputaciones), le dejamos pasar
+                    return true;
                     
                 } catch (Exception e) {
                     System.out.println("Error validando token en Interceptor: " + e.getMessage());
