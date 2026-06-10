@@ -49,8 +49,25 @@ public class RoleInterceptor implements HandlerInterceptor {
                     
                     // 2.2 Si NO es administrador, protegemos la modificación de datos críticos
                     if (path.startsWith("/api/usuarios") || path.startsWith("/api/clientes") || path.startsWith("/api/proyectos")) {
-                        // Si intenta hacer un POST, PUT o DELETE en rutas críticas, lo bloqueamos
+                        
                         if (!"GET".equalsIgnoreCase(method)) {
+                            
+                            // ---> NUEVO: Permitir que un usuario normal actualice su propia cuenta (ej: contraseña) <---
+                            if (path.startsWith("/api/usuarios/") && "PUT".equalsIgnoreCase(method)) {
+                                try {
+                                    String idEnRuta = path.substring(14); // Extrae el ID del final de la URL /api/usuarios/X
+                                    Number idEnToken = jwtUtil.extractAllClaims(token).get("id", Number.class);
+                                    
+                                    // Si el ID del token coincide con el de la URL, es él mismo ¡Le dejamos pasar!
+                                    if (idEnToken != null && idEnToken.toString().equals(idEnRuta)) {
+                                        return true; 
+                                    }
+                                } catch (Exception e) {
+                                    // Si algo falla leyendo la URL, no hacemos nada y dejamos que se bloquee por seguridad
+                                }
+                            }
+
+                            // Si no es él mismo intentando modificarse, le bloqueamos el paso
                             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Acceso denegado: Solo los administradores pueden modificar estos datos.");
                             return false;
                         }
